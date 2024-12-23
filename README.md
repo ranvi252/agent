@@ -1,95 +1,144 @@
 # Compass VPN Agent
 
+
 ## Features
-1. One command VPN setup and remote monitoring
-2. Send metrics and created configs' link to a central dashboard
-3. Collect vital VM metrics such as CPU, Memory usage and Traffic 
-4. Auto Cloudflare DNS management
-5. Direct configs or configs behind Cloudflare proxy
-6. Auto certificate generation for TLS configs (zerossl or letsencrypt)
-7. Support Warp and Direct outbound
-8. Auto discovery of the best Warp endpoint and auto rotation
-9. Create variety of VPN configs
-10. Auto update
-11. Auto configs rotation
-12. Auto block torrent or internal websites (download geosite files automatically)
-13. Support Free Grafana Cloud or Pushgateway for metric collection and dashboard
-14. Configs self testing using xray-knife
-15. and more...
+
+1. One-command VPN setup and remote monitoring.
+2. Send metrics and generated configuration links to a central dashboard.
+3. Collect vital VM metrics, such as CPU, memory, and traffic.
+4. Automatic Cloudflare DNS management.
+5. Support for direct configurations or configurations behind the Cloudflare CDN proxy.
+6. Automatic certificate generation for TLS configurations (using ZeroSSL or Let's Encrypt).
+7. Support for Warp and direct outbound connections.
+8. Automatic discovery of the best Warp endpoint with auto-rotation.
+9. Create a variety of VPN configurations.
+10. Automatic updates.
+11. Automatic configuration rotation.
+12. Automatic blocking of: torrents, Iranian websites, Ads, Malware, and Phishing (with automatic file download).
+13. Support for free Grafana Cloud or Pushgateway for metric collection and dashboard integration.
+14. Configuration self-testing using Xray-Knife.
+15. And more...
+
 
 ## Requirements
 
-* AMD64/ARM64 VPS (2 vCPUs and 2GB RAM recommended)
-* Including but not limited to Ubuntu (20.04, 22.04 or 24.04), Debian 10-12 and Fedora
+- **VPS Architecture**: **AMD64** or **ARM64** _(recommended: 2 vCPUs and 2GB RAM)_.
+- **Supported OS**: **Ubuntu (20+)**, **Debian (10+)**, **Fedora (37+)**.
+- `git` and `curl` packages installed on the server:
+```bash
+sudo apt update -q && sudo apt install -yq git curl
+```
+
 
 ## Services
 
-### xray-config
-Creates config.json, monitor configs and export xray configs via /metrics path.
+### `xray-config`
+Creates `config.json`, monitors configurations, and export Xray configurations via `/metrics` path.
 
-### xray
-This service reads config.json from xray-config service and runs the xray-core.
+### `xray`
+Reads `config.json` from the **xray-config** service and runs the xray-core.
 
-### v2ray-exporter
-Export v2ray configs metrics
+### `v2ray-exporter`
+Exports V2Ray configuration metrics.
 
-### node-exporter
-Prometheus node exporter that collects all important metrics of the agent machine.
+### `node-exporter`
+Prometheus Node Exporter that collects all critical metrics of the agent machine.
 
-### metric-forwarder
-Reads xray-config, node-exporter and v2ray-exporter metrics and push them to the remote manager pushgateway service or Grafana Cloud promotheus endpoint.
+### `metric-forwarder`
+Reads metrics from `xray-config`, `node-exporter`, and `v2ray-exporter` services and pushes them to a remote manager `Pushgateway` service or `Grafana Cloud Prometheus` endpoint.
 
 ## Setup Manager
-Please follow [this tutorial](https://github.com/compassvpn/manager) to create a manager (Options: Grafana Cloud or hosted Grafana+Prometheus). 
+Please follow [this tutorial](https://github.com/compassvpn/manager) to create a manager. You can choose between the following options:
+- Grafana Cloud
+- Hosted Grafana + Prometheus
 
-We need authentication values from the manager to include in the "env_file" of the agent.
+Ensure you obtain the authentication values from the manager setup. These values will be required to include in the `env_file` of the agent.
+
 
 # How to run
 
-The following must run on a VPS that you want to use as a VPN server.
+The following services must be run on a VPS you intend to use as a VPN server.
 
 ## Clone
-1. git clone https://github.com/compassvpn/agent.git
-2. cd agent
 
-## Configure env_file
-1. cp env_file.example env_file
-2. set METRIC_PUSH_METHOD to either "pushgateway" or "grafana_cloud" (depending on your selected option for the Manager)
-3. if METRIC_PUSH_METHOD=grafana_agent (comes from the manager setup [[Option 1](https://github.com/compassvpn/manager?tab=readme-ov-file#option-1-use-garafana-cloud)])
-      * set GRAFANA_AGENT_REMOTE_WRITE_URL
-      * set GRAFANA_AGENT_REMOTE_WRITE_USER
-      * set GRAFANA_AGENT_REMOTE_WRITE_PASSWORD
-4. if METRIC_PUSH_METHOD=pushgateway (comes from the manager setup [[Option 2](https://github.com/compassvpn/manager?tab=readme-ov-file#option-2-deploy-your-own-server)])
-      * set PUSHGATEWAY_URL (pushgateway URL)
-      * set PUSHGATEWAY_AUTH_USER (pushgateway basic auth user)
-      * set PUSHGATEWAY_AUTH_PASSWORD (pushgateway basic auth password)
-5. DONOR=noname (will be used as a label in the promtheus metrics)
-6. REDEPLOY_INTERVAL (reset IDENTIFIER and create new configs on each interval. e.g: 1d=1 day, 14d=every two weeks)
-7. IPINFO_API_TOKEN (https://ipinfo.io/signup - not mandatory)
-8. CF_ENABLE (true or false)
-9. CF_ONLY (true or false) - if the ip of the server is not clean (already filtered), set this to "true"
-10. CF_API_TOKEN (https://developers.cloudflare.com/fundamentals/api/get-started/create-token/ - for one zone)
-11. CF_ZONE_ID (zone id that is selected when creating CF API token)
-12. SSL_PROVIDER=letsencrypt (or zerossl)
-13. XRAY_OUTBOUND=direct # or warp
-14. set XRAY_INBOUNDS to your desired inbounds, listed in inbounds.json
-15. AUTO_UPDATE=on or off ("off" if it's not provided or commented)
+1. ```bash
+      git clone https://github.com/compassvpn/agent.git
+      ```
+2. ```bash
+      cd agent
+      ```
+
+## Configure `env_file`
+
+1. ```bash 
+      cp env_file.example env_file
+      ```
+2. Set `METRIC_PUSH_METHOD` to either `pushgateway` or `grafana_cloud`, based on your chosen Manager option.
+
+3. if `METRIC_PUSH_METHOD=grafana_agent` _(set during the manager setup: [Option 1](https://github.com/compassvpn/manager?tab=readme-ov-file#option-1-use-garafana-cloud))_
+      - set `GRAFANA_AGENT_REMOTE_WRITE_URL` _(Grafana remote URL)_
+      - set `GRAFANA_AGENT_REMOTE_WRITE_USER` _(Grafana user)_
+      - set `GRAFANA_AGENT_REMOTE_WRITE_PASSWORD` _(Grafana token password)_
+
+4. if `METRIC_PUSH_METHOD=pushgateway` _(set during the manager setup: [Option 2](https://github.com/compassvpn/manager?tab=readme-ov-file#option-2-deploy-your-own-server))_
+      - set `PUSHGATEWAY_URL` _(pushgateway URL)_
+      - set `PUSHGATEWAY_AUTH_USER` _(pushgateway basic auth user)_
+      - set `PUSHGATEWAY_AUTH_PASSWORD` _(pushgateway basic auth password)_
+
+5. Set `DONOR=noname` _(used as a label in Prometheus metrics)_.
+
+6. Set `REDEPLOY_INTERVAL` _(resets `IDENTIFIER` and generates new configurations at each interval, e.g., `1d` for 1 day, `14d` for every two weeks)_.
+
+7. Set `IPINFO_API_TOKEN` _(Optional, signup at [ipinfo](https://ipinfo.io/signup))_
+
+8. Set `CF_ENABLE` to:
+      - `true` to include Cloudflare CDN configuration links alongside other configs.
+      - `false` to skip generating Cloudflare CDN configs.
+
+9. Set `CF_ONLY` to:
+      - `true` if the server's IP is filtered or not clean.
+      - `false` to allow direct configurations without Cloudflare.
+
+10. Configure Cloudflare `CF_API_TOKEN` and `CF_ZONE_ID`
+      - `CF_API_TOKEN`: Create this token for one zone at [Cloudflare API Token Setup](https://developers.cloudflare.com/fundamentals/api/get-started/create-token/).
+      - `CF_ZONE_ID`: Use the Zone ID selected when creating the API token.
+
+11. Set `SSL_PROVIDER` to `letsencrypt` or `zerossl` (depending on your preferred SSL certificate provider).
+
+12. Set `XRAY_OUTBOUND` to:
+      - `direct` for direct outbound connections.
+      - `warp` for [WARP](https://one.one.one.one) outbound connections.
+
+13. Set `XRAY_INBOUNDS` to your desired inbound configurations, as defined in inbounds.json.
+      
+      Supported Inbounds:
+      - `VLess-TCP-TLS-Direct`
+      - `VLess-HU-TLS-CDN`
+      - _(Default when not set: `VLess-TCP-TLS-Direct,VLess-HU-TLS-CDN`)_
+
+14. Set `AUTO_UPDATE` to:
+      - `on` to enable automatic updates.
+      - `off` to disable automatic updates _(default if not provided or commented out)_.
+
 
 ## Commands
 
-### Bootstrap - first time
-```
+### Bootstrap: _(first time)_
+```bash
 ./bootstrap.sh
 ```
 
-### Rebuild and restart all services
-```
+### Rebuild and restart all services:
+```bash
 ./restart.sh
 ```
 
-### Update
-```
-./update.sh
-./restart.sh
+### Update:
+```bash
+./update.sh && sleep 1 && ./restart.sh
 ```
 
+### Show Logs:
+```bash
+./logs.sh
+```

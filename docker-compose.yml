@@ -31,25 +31,14 @@ services:
         max-size: "1m"  # Limit log file size to 1 MB
         max-file: "3"    # Retain up to 3 log files (rotate)
     ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
       - "2053:2053"
       - "2053:2053/udp"
-      - "2083:2083"
-      - "2083:2083/udp"
       - "8443:8443"
       - "8443:8443/udp"
-      - "2086:2086"
-      - "2096:2096"
-      - "2082:2082"
-      - "2082:2082/udp"
-      - "443:443"
-      - "9443:9443"
-      - "2087:2087"
-      - "2053:2053"
-      - "4443:4443"
-      - "8090:8090"
-      - "8080:8080"
-      - "2095:2095"
-      - "2082:2082"
+      
   v2ray-exporter:
     build:
       context: ./v2ray-exporter
@@ -70,7 +59,7 @@ services:
       - xray-config
       - node-exporter
   node-exporter:
-    image: prom/node-exporter:v1.7.0
+    image: prom/node-exporter:v1.8.2
     restart: always
     network_mode: host  # needs to access to the host network interfaces
     volumes:

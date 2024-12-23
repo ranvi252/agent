@@ -15,8 +15,7 @@ cf_only = os.environ.get('CF_ONLY', 'false') in ['True', 'true', 'yes']
 cf_enable = os.environ.get('CF_ENABLE', 'false') in ['True', 'true', 'yes']
 cf_api_token = os.environ.get('CF_API_TOKEN', None)
 cf_zone_id = os.environ.get('CF_ZONE_ID', None)
-xray_inbounds = os.environ.get("XRAY_INBOUNDS", "trojan-ws-tls-cdn,vless-grpc-cdn,vless-tcp-tls,vless-grpc-tls,"
-                                                "vless-tcp-reality,vless-quic").split(",")
+xray_inbounds = os.environ.get("XRAY_INBOUNDS", "VLess-TCP-TLS-Direct,VLess-HU-TLS-CDN").split(",")
 
 domain = None
 subdomain = None
@@ -221,8 +220,9 @@ xray_config = {
                 "outboundTag": "blocked",
                 "ip": [
                     "geoip:private",
-                    "geoip:ru",
-                    "ext:geoip_IR.dat:ir"
+                    "ext:geoip_IR.dat:ir",
+                    "ext:geoip_IR.dat:phishing",
+                    "ext:geoip_IR.dat:malware"
                 ]
             },
             {
@@ -236,13 +236,14 @@ xray_config = {
                 "type": "field",
                 "outboundTag": "blocked",
                 "domain": [
-                    "geosite:category-gov-ru",
-                    "regexp:.*\\.ru$",
+                    "geosite:private",
                     "regexp:.*\\.ir$",
                     "regexp:.*\\.xn--mgba3a4f16a$",
                     "ext:geosite_IR.dat:ir",
-                    "geosite:category-ads-all",
-                    "ext:geosite_IR.dat:category-ads-all"
+                    "ext:geosite_IR.dat:category-ads-all",
+                    "ext:geosite_IR.dat:malware",
+                    "ext:geosite_IR.dat:phishing",
+                    "ext:geosite_IR.dat:cryptominers"
                 ]
             }
         ]
@@ -253,7 +254,9 @@ xray_config = {
         {
             "tag": "direct",
             "protocol": "freedom",
-            "settings": {}
+            "settings": {
+              "domainStrategy": "UseIPv4"
+            }
         },
         {
             "tag": "blocked",
