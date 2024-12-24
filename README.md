@@ -52,7 +52,7 @@ Please follow [this tutorial](https://github.com/compassvpn/manager) to create a
 - Grafana Cloud
 - Hosted Grafana + Prometheus
 
-Ensure you obtain the authentication values from the manager setup. These values will be required to include in the `env_file` of the agent.
+Ensure you obtain the authentication values from the manager setup. These values will be required to be included in the `env_file` of the agent.
 
 
 # How to run
