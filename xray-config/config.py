@@ -15,6 +15,7 @@ cf_only = os.environ.get('CF_ONLY', 'false') in ['True', 'true', 'yes']
 cf_enable = os.environ.get('CF_ENABLE', 'false') in ['True', 'true', 'yes']
 cf_api_token = os.environ.get('CF_API_TOKEN', None)
 cf_zone_id = os.environ.get('CF_ZONE_ID', None)
+nginx_path = os.environ.get('NGINX_PATH', None)
 xray_inbounds = os.environ.get("XRAY_INBOUNDS", "VLess-TCP-TLS-Direct,VLess-HU-TLS-CDN").split(",")
 
 domain = None
@@ -165,6 +166,7 @@ with open("inbounds.json") as f:
     all_inbounds = json.loads(inbound_template.substitute({"config_id": config_id,
                                                            "config_uuid": config_uuid,
                                                            "cf_clean_ip_domain": cf_clean_ip_domain,
+                                                           "nginx_path": nginx_path,
                                                            "server_ip": server_ip,
                                                            "direct_subdomain": direct_subdomain,
                                                            "subdomain": subdomain,

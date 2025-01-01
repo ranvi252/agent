@@ -14,7 +14,12 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-curl -fsSL https://get.docker.com | sh
+if command_not_exists docker; then
+    echo "Docker is not installed"
+    curl -fsSL https://get.docker.com | sh
+else
+    echo "Docker is installed"
+fi
 
 file_path="env_file"
 if [ -f $file_path ]; then

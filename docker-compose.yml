@@ -31,14 +31,21 @@ services:
         max-size: "1m"  # Limit log file size to 1 MB
         max-file: "3"    # Retain up to 3 log files (rotate)
     ports:
-      - "80:80"
       - "443:443"
-      - "443:443/udp"
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    volumes:
+      - "acme:/root/.acme.sh/"
+    restart: always
+    env_file:
+      - env_file
+    ports:
+      - "80:80"
       - "2053:2053"
-      - "2053:2053/udp"
-      - "8443:8443"
-      - "8443:8443/udp"
-      
+#    depends_on:
+#      - xray
   v2ray-exporter:
     build:
       context: ./v2ray-exporter
