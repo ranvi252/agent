@@ -23,6 +23,9 @@ CF_API_TOKEN=
 CF_ZONE_ID=
 CF_CLEAN_IP_DOMAIN= # e.g. zula.ir, npmjs.com or ip address
 XRAY_OUTBOUND=direct # or warp
-XRAY_INBOUNDS=VLess-TCP-TLS-Direct,VLess-HU-TLS-CDN # Default: VLess-TCP-TLS-Direct,VLess-HU-TLS-CDN
+XRAY_INBOUNDS=vless-tcp-tls-direct,vless-hu-tls-direct,vless-hu-tls-cdn # Default: vless-tcp-tls-direct,vless-hu-tls-direct
 SSL_PROVIDER=letsencrypt  # you can also zerossl
-AUTO_UPDATE=on  # off (disable auto update)
+AUTO_UPDATE=off  # off (disable auto update)
+
+NGINX_PATH=live
+NGINX_FAKE_WEBSITE=www.google.com

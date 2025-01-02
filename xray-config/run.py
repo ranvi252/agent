@@ -125,6 +125,11 @@ def valid_configs():
     return valid_configs
 
 
+@app.route('/subdomain')
+def export_certs():
+    return config.direct_subdomain
+
+
 @app.route('/metrics')
 def metrics():
     return latest_metrics

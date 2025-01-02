@@ -1,12 +1,45 @@
 [
   {
-    "name": "VLess-TCP-TLS-Direct",
-    "link": "vless://$config_id@$direct_subdomain:8443?type=tcp&security=tls&flow=xtls-rprx-vision&fp=randomized&alpn=h2%2Chttp%2F1.1&sni=$direct_subdomain#VLess-TCP-TLS-Direct",
+    "name": "vless-hu-tls-direct",
+    "link": "vless://$config_id@$direct_subdomain:2053?type=httpupgrade&path=%2F$nginx_path&security=tls&fp=randomized&sni=$direct_subdomain#vless-hu-tls-direct",
     "cloudflare": false,
     "inbound": {
-      "tag": "VLess-TCP-TLS-Direct",
+      "tag": "vless-hu-tls-direct",
       "listen": "0.0.0.0",
-      "port": 8443,
+      "port": 8003,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "$config_id"
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "httpupgrade",
+        "httpupgradeSettings": {
+          "path": "/$nginx_path"
+        }
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "http",
+          "tls",
+          "quic"
+        ]
+      }
+    }
+  },
+  {
+    "name": "vless-tcp-tls-direct",
+    "link": "vless://$config_id@$direct_subdomain:443?type=tcp&security=tls&flow=xtls-rprx-vision&fp=randomized&alpn=h2%2Chttp%2F1.1&sni=$direct_subdomain#vless-tcp-tls-direct",
+    "cloudflare": false,
+    "inbound": {
+      "tag": "vless-tcp-tls-direct",
+      "listen": "0.0.0.0",
+      "port": 443,
       "protocol": "vless",
       "settings": {
         "clients": [
@@ -16,7 +49,17 @@
           }
         ],
         "decryption": "none",
-        "fallbacks": []
+        "fallbacks": [
+            {
+                "dest": "nginx:8001",
+                "xver": 1
+            },
+            {
+                "alpn": "h2",
+                "dest": "nginx:8002",
+                "xver": 1
+            }
+        ]
       },
       "streamSettings": {
         "network": "tcp",
@@ -48,11 +91,11 @@
     }
   },
   {
-    "name": "VLess-HU-TLS-CDN",
+    "name": "vless-hu-tls-cdn",
     "link": "vless://$config_id@$cf_clean_ip_domain:2053?type=httpupgrade&host=$subdomain&path=%2Flove&security=tls&fp=randomized&alpn=h2%2Chttp%2F1.1&sni=$subdomain#VLess-HU-TLS-CDN",
     "cloudflare": true,
     "inbound": {
-      "tag": "VLess-HU-TLS-CDN",
+      "tag": "vless-hu-tls-cdn",
       "listen": "0.0.0.0",
       "port": 2053,
       "protocol": "vless",
