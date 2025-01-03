@@ -16,7 +16,7 @@ cf_enable = os.environ.get('CF_ENABLE', 'false') in ['True', 'true', 'yes']
 cf_api_token = os.environ.get('CF_API_TOKEN', None)
 cf_zone_id = os.environ.get('CF_ZONE_ID', None)
 nginx_path = os.environ.get('NGINX_PATH', None)
-xray_inbounds = os.environ.get("XRAY_INBOUNDS", "VLess-TCP-TLS-Direct,VLess-HU-TLS-CDN").split(",")
+xray_inbounds = os.environ.get("XRAY_INBOUNDS", "vless-tcp-tls-direct,vless-hu-tls-direct").split(",")
 
 domain = None
 subdomain = None
