@@ -70,9 +70,11 @@ The following services must be run on a VPS you intend to use as a VPN server.
 
 ## Configure `env_file`
 
-1. ```bash 
+1. Copy the example file to `env_file`, the program's required configuration file:
+      ```
       cp env_file.example env_file
       ```
+
 2. Set `METRIC_PUSH_METHOD` to either `pushgateway` or `grafana_cloud`, based on your chosen Manager option.
 
 3. if `METRIC_PUSH_METHOD=grafana_agent` _(set during the manager setup: [Option 1](https://github.com/compassvpn/manager?tab=readme-ov-file#option-1-use-garafana-cloud))_
@@ -119,6 +121,10 @@ The following services must be run on a VPS you intend to use as a VPN server.
 14. Set `AUTO_UPDATE` to:
       - `on` to enable automatic updates.
       - `off` to disable automatic updates _(default if not provided or commented out)_.
+
+15. Configure `NGINX`:
+      - Set `NGINX_PATH`: Any value is fine; it just needs to be present as firewalls won’t see it.
+      - Set `NGINX_FAKE_WEBSITE`. Use a site relevant to your VPS region, avoiding Cloudflare CDN websites.
 
 
 ## Commands

@@ -17,15 +17,15 @@ DONOR=noname
 REDEPLOY_INTERVAL= # e.g. 1d (1 day), 2m (2 months)
 
 IPINFO_API_TOKEN=
-CF_ENABLE=true
+CF_ENABLE=false
 CF_ONLY=false
 CF_API_TOKEN=
 CF_ZONE_ID=
 CF_CLEAN_IP_DOMAIN= # e.g. zula.ir, npmjs.com or ip address
 XRAY_OUTBOUND=direct # or warp
-XRAY_INBOUNDS=vless-tcp-tls-direct,vless-hu-tls-direct,vless-hu-tls-cdn # Default: vless-tcp-tls-direct,vless-hu-tls-direct
+XRAY_INBOUNDS=vless-tcp-tls-direct,vless-hu-tls-direct  # Read More: https://github.com/compassvpn/agent/?tab=readme-ov-file#configure-env_file
 SSL_PROVIDER=letsencrypt  # you can also zerossl
 AUTO_UPDATE=off  # off (disable auto update)
 
-NGINX_PATH=live
-NGINX_FAKE_WEBSITE=www.google.com
+NGINX_PATH=compass
+NGINX_FAKE_WEBSITE=www.google.com  # Read More: https://github.com/compassvpn/agent/?tab=readme-ov-file#configure-env_file
