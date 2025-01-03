@@ -120,6 +120,10 @@ The following services must be run on a VPS you intend to use as a VPN server.
       - `on` to enable automatic updates.
       - `off` to disable automatic updates _(default if not provided or commented out)_.
 
+15. Configure `NGINX`:
+      - Set `NGINX_PATH`: Any value is fine; it just needs to be present as firewalls won’t see it.
+      - Set `NGINX_FAKE_WEBSITE`. Use a site relevant to your VPS region, avoiding Cloudflare CDN websites.
+
 
 ## Commands
 
