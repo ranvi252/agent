@@ -1,38 +1,5 @@
 [
   {
-    "name": "vless-hu-tls-direct",
-    "link": "vless://$config_id@$direct_subdomain:2053?type=httpupgrade&path=%2F$nginx_path&security=tls&fp=randomized&sni=$direct_subdomain#vless-hu-tls-direct",
-    "cloudflare": false,
-    "inbound": {
-      "tag": "vless-hu-tls-direct",
-      "listen": "0.0.0.0",
-      "port": 8003,
-      "protocol": "vless",
-      "settings": {
-        "clients": [
-          {
-            "id": "$config_id"
-          }
-        ],
-        "decryption": "none"
-      },
-      "streamSettings": {
-        "network": "httpupgrade",
-        "httpupgradeSettings": {
-          "path": "/$nginx_path"
-        }
-      },
-      "sniffing": {
-        "enabled": true,
-        "destOverride": [
-          "http",
-          "tls",
-          "quic"
-        ]
-      }
-    }
-  },
-  {
     "name": "vless-tcp-tls-direct",
     "link": "vless://$config_id@$direct_subdomain:443?type=tcp&security=tls&flow=xtls-rprx-vision&fp=randomized&alpn=h2%2Chttp%2F1.1&sni=$direct_subdomain#vless-tcp-tls-direct",
     "cloudflare": false,
@@ -91,18 +58,17 @@
     }
   },
   {
-    "name": "vless-hu-tls-cdn",
-    "link": "vless://$config_id@$cf_clean_ip_domain:2053?type=httpupgrade&host=$subdomain&path=%2Flove&security=tls&fp=randomized&alpn=h2%2Chttp%2F1.1&sni=$subdomain#VLess-HU-TLS-CDN",
-    "cloudflare": true,
+    "name": "vless-hu-tls-direct",
+    "link": "vless://$config_id@$direct_subdomain:2053?type=httpupgrade&host=$subdomain&path=%2F$nginx_path&security=tls&fp=randomized&sni=$direct_subdomain#vless-hu-tls-direct",
+    "cloudflare": false,
     "inbound": {
-      "tag": "vless-hu-tls-cdn",
+      "tag": "vless-hu-tls-direct",
       "listen": "0.0.0.0",
-      "port": 2053,
+      "port": 8003,
       "protocol": "vless",
       "settings": {
         "clients": [
           {
-            "flow": "",
             "id": "$config_id"
           }
         ],
@@ -111,22 +77,40 @@
       "streamSettings": {
         "network": "httpupgrade",
         "httpupgradeSettings": {
-          "host": "$subdomain",
-          "path": "/love"
-        },
-        "security": "tls",
-        "tlsSettings": {
-          "certificates": [
-            {
-              "certificate": [
-                "$cert_public"
-              ],
-              "key": [
-                "$cert_private"
-              ]
-            }
-          ],
-          "minVersion": "1.3"
+          "path": "/$nginx_path"
+        }
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "http",
+          "tls",
+          "quic"
+        ]
+      }
+    }
+  },
+  {
+    "name": "vless-hu-tls-cdn",
+    "link": "vless://$config_id@$cf_clean_ip_domain:2053?type=httpupgrade&host=$subdomain&path=%2F$nginx_path&security=tls&fp=randomized&alpn=h2%2Chttp%2F1.1&sni=$subdomain#vless-hu-tls-cdn",
+    "cloudflare": true,
+    "inbound": {
+      "tag": "vless-hu-tls-cdn",
+      "listen": "0.0.0.0",
+      "port": 8003,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "$config_id"
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "httpupgrade",
+        "httpupgradeSettings": {
+          "path": "/$nginx_path"
         }
       },
       "sniffing": {
