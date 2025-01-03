@@ -1,9 +1,10 @@
+import json
 import os
 import threading
 import time
 import config
 from utils import get_public_ip, csv_to_dict, exec, get_machine_id, parse_config_link
-from flask import Flask
+from flask import Flask, abort
 
 
 valid_configs = {}
@@ -116,19 +117,21 @@ cert_thread.start()
 # Define a route for the root URL
 @app.route('/config')
 def get_xray_config():
-    print(config.xray_config)
-    return config.xray_config
-
+    return json.dumps(config.xray_config, indent=4)
 
 @app.route('/valid-configs')
 def valid_configs():
-    return valid_configs
-
+    return json.dumps(valid_configs, indent=4)
 
 @app.route('/subdomain')
 def export_certs():
     return config.direct_subdomain
 
+@app.route('/warps')
+def get_warps():
+    if not config.warps_ready:
+        abort(404)
+    return json.dumps(config.warps, indent=4)
 
 @app.route('/metrics')
 def metrics():
