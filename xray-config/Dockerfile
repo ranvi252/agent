@@ -1,5 +1,3 @@
-FROM teddysun/xray:24.12.18 AS xray-image
-
 FROM python:3.13.1-alpine3.21
 
 COPY requirements.txt requirements.txt
