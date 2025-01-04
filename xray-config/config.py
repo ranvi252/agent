@@ -2,6 +2,7 @@ import base64
 import json
 import os
 import string
+from time import sleep
 
 import requests
 
@@ -193,7 +194,7 @@ inbounds = [{
     "settings": {
         "address": "127.0.0.1"
     },
-    "tag": "api"
+    "tag": "doko"
 }]
 if cf_enable:
     inbounds.extend([inbound["inbound"] for inbound in configured_inbounds if inbound.get("cloudflare", False)])
@@ -211,14 +212,12 @@ xray_config = {
         "domainStrategy": "IPIfNonMatch",
         "rules": [
             {
-                "type": "field",
                 "inboundTag": [
-                    "api"
+                    "doko"
                 ],
                 "outboundTag": "api"
             },
             {
-                "type": "field",
                 "outboundTag": "blocked",
                 "ip": [
                     "geoip:private",
@@ -228,14 +227,12 @@ xray_config = {
                 ]
             },
             {
-                "type": "field",
                 "outboundTag": "blocked",
                 "protocol": [
                     "bittorrent"
                 ]
             },
             {
-                "type": "field",
                 "outboundTag": "blocked",
                 "domain": [
                     "geosite:private",
@@ -252,20 +249,7 @@ xray_config = {
     },
     "dns": None,
     "inbounds": inbounds,
-    "outbounds": [
-        {
-            "tag": "direct",
-            "protocol": "freedom",
-            "settings": {
-              "domainStrategy": "UseIPv4"
-            }
-        },
-        {
-            "tag": "blocked",
-            "protocol": "blackhole",
-            "settings": {}
-        }
-    ],
+    "outbounds": [],
     "transport": None,
     "policy": {
         "levels": {
@@ -292,28 +276,63 @@ xray_config = {
     "fakeDns": None
 }
 
+warps_ready = False
 if os.environ.get('XRAY_OUTBOUND') == 'warp':
-    warp = register_warp()
-    endpoint = find_warp_endpoint()
-    xray_config['outbounds'][0] = {
-        "protocol": "wireguard",
-        "settings": {
-            "reserved": [0, 0, 0],
-            "mtu": 1280,
-            "kernelMode": False,
-            "domainStrategy": "ForceIPv4",
-            "secretKey": warp['privatekey'],
-            "address": warp['addresses'],
-            "peers": [
-                {
-                    "publicKey": warp['pubkey'],
-                    "allowedIPs": [
-                        "0.0.0.0/0",
-                        "::/0"
-                    ],
-                    "endpoint": endpoint
+    warps = []
+    warps.append(register_warp())
+    sleep(2)
+    warps.append(register_warp())
+    sleep(2)
+    warps.append(register_warp())
+    warps_ready = True
+    # add new routing rules at the beginning of the rules list
+    xray_config['routing']['rules'].insert(1, {
+        "inboundTag": [
+            "vless-tcp-tls-direct",
+            "vless-hu-tls-direct",
+            "vless-hu-tls-cdn"
+        ],
+        "balancerTag": "balancer1"
+    })
+    # add warp balancer object
+    xray_config['routing']['balancers'] = [{
+        "tag": "balancer1",
+        "selector": [
+            "warp0",
+            "warp1",
+            "warp2"
+        ],
+        "strategy": {
+            "type": "roundRobin"
+        }
+    }]
+    # define warp outbounds
+    for i, warp in enumerate(warps):
+        xray_config['outbounds'].append(
+            {
+                "tag": f"warp{i}",
+                "protocol": "freedom",
+                "streamSettings": {
+                    "sockopt": {
+                        "tcpFastOpen": True,
+                        "interface": f"wg{i}"
+                    }
                 }
-            ]
-        },
-        "tag": "direct"
+            }
+        )
+
+
+xray_config['outbounds'] += [
+    {
+        "tag": "direct",
+        "protocol": "freedom",
+        "settings": {
+            "domainStrategy": "UseIPv4"
+        }
+    },
+    {
+        "tag": "blocked",
+        "protocol": "blackhole",
+        "settings": {}
     }
+]
