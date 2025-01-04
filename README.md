@@ -1,5 +1,6 @@
-# Compass VPN Agent
+## ⚠️ Caution: This project is under active development! ⚠️
 
+# Compass VPN Agent
 
 ## Features
 
@@ -114,9 +115,10 @@ The following services must be run on a VPS you intend to use as a VPN server.
 13. Set `XRAY_INBOUNDS` to your desired inbound configurations, as defined in inbounds.json.
       
       Supported Inbounds:
-      - `VLess-TCP-TLS-Direct`
-      - `VLess-HU-TLS-CDN`
-      - _(Default when not set: `VLess-TCP-TLS-Direct,VLess-HU-TLS-CDN`)_
+      - `vless-tcp-tls-direct`
+      - `vless-hu-tls-direct`
+      - `vless-hu-tls-cdn`
+      - _(Default when not set: `vless-tcp-tls-direct,vless-hu-tls-direct,vless-hu-tls-cdn`)_
 
 14. Set `AUTO_UPDATE` to:
       - `on` to enable automatic updates.
