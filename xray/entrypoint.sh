@@ -1,5 +1,6 @@
 #!/bin/sh
 
+rm /run/*.pid
 
 if [ $XRAY_OUTBOUND = "warp" ]; then
   # xray-config upstream URL
@@ -65,6 +66,10 @@ else
 fi
 
 curl $XRAY_CONFIG_URL > /etc/xray/config.json
+
+echo "#bin/sh" > /usr/sbin/resolvconf
+
+#echo -e "nameserver 127.0.0.1\nnameserver 127.0.0.11" > /etc/resolv.conf
 
 monit --version
 

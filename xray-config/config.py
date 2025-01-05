@@ -202,11 +202,12 @@ if cf_enable:
 if not cf_only:
     inbounds.extend([inbound["inbound"] for inbound in configured_inbounds if inbound.get("cloudflare", False) is False])
 
+DEBUG = os.environ.get('DEBUG', 'disable').lower() in ['enable', 'enabled', 'yes']
 xray_config = {
     "log": {
-        "access": "none",
-        "loglevel": "warning",
-        "dnsLog": False
+        "access": "/var/log/xray_access.log" if DEBUG else "none",
+        "loglevel": "info" if DEBUG else "warning",
+        "dnsLog": True if DEBUG else False
     },
     "routing": {
         "domainStrategy": "IPIfNonMatch",
@@ -276,6 +277,23 @@ xray_config = {
     "fakeDns": None
 }
 
+CUSTOM_DNS = os.environ.get('CUSTOM_DNS', "default")
+if CUSTOM_DNS != "default":
+    dns_server = None
+    if CUSTOM_DNS == "cf":
+        dns_server = "https+local://security.cloudflare-dns.com/dns-query"
+    elif CUSTOM_DNS == "controld":
+        dns_server = "https+local://freedns.controld.com/no-ads-dating-drugs-gambling-malware-typo"
+    elif CUSTOM_DNS.startswith("https+local://") or CUSTOM_DNS.startswith("quic+local://"):
+        dns_server = CUSTOM_DNS
+    if dns_server:
+        xray_config["dns"] = {
+            "servers": [
+                dns_server
+            ],
+            "queryStrategy": "UseIPv4"
+        }
+
 warps_ready = False
 if os.environ.get('XRAY_OUTBOUND') == 'warp':
     warps = []
@@ -286,7 +304,7 @@ if os.environ.get('XRAY_OUTBOUND') == 'warp':
     warps.append(register_warp())
     warps_ready = True
     # add new routing rules at the beginning of the rules list
-    xray_config['routing']['rules'].insert(1, {
+    xray_config['routing']['rules'].append({
         "inboundTag": [
             "vless-tcp-tls-direct",
             "vless-hu-tls-direct",
@@ -295,6 +313,7 @@ if os.environ.get('XRAY_OUTBOUND') == 'warp':
         "balancerTag": "balancer1"
     })
     # add warp balancer object
+    xray_config['routing']['domainStrategy'] = "IPOnDemand"
     xray_config['routing']['balancers'] = [{
         "tag": "balancer1",
         "selector": [

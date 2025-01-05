@@ -18,7 +18,8 @@
 12. Automatic blocking of: torrents, Iranian websites, Ads, Malware, and Phishing (with automatic file download).
 13. Support for free Grafana Cloud or Pushgateway for metric collection and dashboard integration.
 14. Configuration self-testing using Xray-Knife.
-15. And more...
+15. Ability to set a custom DNS to block junk traffic on egress and reduce cost
+16. And more...
 
 
 ## Requirements
