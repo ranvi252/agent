@@ -29,3 +29,7 @@ AUTO_UPDATE=off  # off (disable auto update)
 
 NGINX_PATH=compass
 NGINX_FAKE_WEBSITE=www.google.com  # Read More: https://github.com/compassvpn/agent/?tab=readme-ov-file#configure-env_file
+
+CUSTOM_DNS=controld #choices: default,cf,controld,custom (e.g. tls+local://my-awesome-dns.com)
+
+DEBUG=disable # choices: enabled, disable (default: disable)
