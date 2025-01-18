@@ -134,16 +134,20 @@ The following services must be run on a VPS you intend to use as a VPN server.
 16. Set `CUSTOM_DNS` to:
       - `default`: Use the VPS default DNS servers.
       - `cf`: Use the [CloudFlare Security DoH](https://security.cloudflare-dns.com/dns-query): Will block Malware services.
-      - `controld`: Use the [ControlD free DoH](https://freedns.controld.com/no-ads-dating-drugs-gambling-malware-typo/): Will block Ads, Dating, Drugs, Gambling, Malware services.
+      - `controld`: Use the [ControlD free DoH](https://freedns.controld.com/no-ads-dating-drugs-gambling-malware-typo/): Will block Ads, Dating, Drugs, Gambling, Malware services. _(default)_
       - `custom`: Use any DNS server you wish to provide, with support for DoU, DoT, DoH, and DoQ. For each, input as follows:
 
       DoU: `CUSTOM_DNS=76.76.2.2`
-    
+
       DoT: `CUSTOM_DNS=tls+local://p2.freedns.controld.com`
-    
+
       DoH: `CUSTOM_DNS=https+local://freedns.controld.com/p2`
-    
+
       DoQ: `CUSTOM_DNS=quic+local://p2.freedns.controld.com`
+
+17. Set `DEBUG` to:
+      - `disable`. _(default)_
+      - `enable`: Show Xray-core debug and DNS logs.
 
 
 ## Commands
