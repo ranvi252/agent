@@ -138,8 +138,11 @@ The following services must be run on a VPS you intend to use as a VPN server.
       - `custom`: Use any DNS server you wish to provide, with support for DoU, DoT, DoH, and DoQ. For each, input as follows:
 
       DoU: `CUSTOM_DNS=76.76.2.2`
+    
       DoT: `CUSTOM_DNS=tls+local://p2.freedns.controld.com`
+    
       DoH: `CUSTOM_DNS=https+local://freedns.controld.com/p2`
+    
       DoQ: `CUSTOM_DNS=quic+local://p2.freedns.controld.com`
 
 
