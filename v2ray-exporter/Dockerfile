@@ -1,8 +1,10 @@
 FROM alpine:3.21.0
 
-RUN apk add --no-cache wget
-RUN wget -O /v2ray-exporter https://github.com/wi1dcard/v2ray-exporter/releases/download/v0.6.0/v2ray-exporter_linux_$( ( [ $(uname -m) = 'x86_64' ] && echo "amd64") || ([ $(uname -m) = "aarch64" ] && echo "arm64" ) )
-RUN chmod +x /v2ray-exporter
-RUN apk del -r wget
+RUN apk add --no-cache wget && \
+    ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then arch="amd64"; elif [ "$ARCH" = "aarch64" ]; then arch="arm64"; else echo "Unsupported architecture" && exit 1; fi && \
+    wget -O /v2ray-exporter https://github.com/wi1dcard/v2ray-exporter/releases/download/v0.6.0/v2ray-exporter_linux_${arch} && \
+    chmod +x /v2ray-exporter && \
+    apk del wget
 
 CMD ["/v2ray-exporter", "--v2ray-endpoint", "xray:54321"]
