@@ -6,7 +6,6 @@ import config
 from utils import get_public_ip, csv_to_dict, exec, get_machine_id, parse_config_link
 from flask import Flask, abort
 
-
 valid_configs = {}
 latest_metrics = ""
 
@@ -14,7 +13,6 @@ instance_location_info = get_public_ip(extra=True)
 
 # Create a Flask application
 app = Flask(__name__)
-
 
 def update_metrics(configs):
     global latest_metrics
@@ -57,7 +55,6 @@ def update_metrics(configs):
         return False
     return True
 
-
 def background_job():
     global valid_configs
 
@@ -76,7 +73,7 @@ def background_job():
             time.sleep(5)
             continue
         print("start xray testing...", flush=True)
-        exec(["xray-knife", "net", "http", "--thread", "3",  "-d", "30000", "-r",
+        exec(["xray-knife", "net", "http", "--thread", "3", "-d", "30000", "-r",
               "-e", "-p", "-a", "500", "-f", "configs.csv", "--type", "csv"])
         # exec(["cat", "valid.csv"])
         valid_configs = csv_to_dict("valid.csv")
@@ -91,7 +88,6 @@ def background_job():
         else:
             time.sleep(15)  # try again in 15 seconds
 
-
 def cert_management_job():
     while True:
         if not config.initialized:
@@ -103,12 +99,10 @@ def cert_management_job():
                 # try to renew the cert
                 os.system(f'CF_Token={config.cf_api_token} .acme.sh/acme.sh --renew --dns dns_cf -d {config.direct_subdomain}')
 
-
 # Start the background job in a separate thread
 thread = threading.Thread(target=background_job)
 thread.daemon = True
 thread.start()
-
 
 cert_thread = threading.Thread(target=cert_management_job)
 cert_thread.daemon = True
@@ -120,7 +114,7 @@ def get_xray_config():
     return json.dumps(config.xray_config, indent=4)
 
 @app.route('/valid-configs')
-def valid_configs():
+def valid_configs_route():
     return json.dumps(valid_configs, indent=4)
 
 @app.route('/subdomain')
@@ -136,7 +130,6 @@ def get_warps():
 @app.route('/metrics')
 def metrics():
     return latest_metrics
-
 
 # Run the application if executed directly
 if __name__ == '__main__':
