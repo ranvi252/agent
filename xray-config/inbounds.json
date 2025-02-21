@@ -18,12 +18,8 @@
         "decryption": "none",
         "fallbacks": [
             {
-                "dest": "nginx:8001",
-                "xver": 1
-            },
-            {
                 "alpn": "h2",
-                "dest": "nginx:8002",
+                "dest": "nginx:8001",
                 "xver": 1
             }
         ]
@@ -64,7 +60,7 @@
     "inbound": {
       "tag": "vless-hu-tls-direct",
       "listen": "0.0.0.0",
-      "port": 8003,
+      "port": 8002,
       "protocol": "vless",
       "settings": {
         "clients": [
@@ -97,7 +93,7 @@
     "inbound": {
       "tag": "vless-hu-tls-cdn",
       "listen": "0.0.0.0",
-      "port": 8003,
+      "port": 8002,
       "protocol": "vless",
       "settings": {
         "clients": [
