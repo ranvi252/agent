@@ -41,7 +41,7 @@ def update_metrics(configs):
         inline_labels = ','.join(labels)
         t = f'vpn_config{{{inline_labels}}}'
         if value[0] == "passed":
-            t += f" {value[3]}"  # delay
+            t += f" {value[4]}"  # delay
         else:
             failed_count += 1
             t += " -1"  # invalid delay

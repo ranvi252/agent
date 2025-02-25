@@ -1,4 +1,4 @@
-FROM teddysun/xray:24.12.31
+FROM teddysun/xray:25.2.21
 
 RUN apk update && apk add curl wget wireguard-tools-wg-quick monit jq net-tools
 
