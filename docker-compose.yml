@@ -33,7 +33,8 @@ services:
         max-size: "1m"  # Limit log file size to 1 MB
         max-file: "3"    # Retain up to 3 log files (rotate)
     ports:
-      - "443:443"
+      - "443:443/tcp"
+      - "443:443/udp"
 
   nginx:
     build:
@@ -45,8 +46,10 @@ services:
     env_file:
       - env_file
     ports:
-      - "80:80"
-      - "2053:2053"
+      - "80:80/tcp"
+      - "2053:2053/tcp"
+      - "2053:2053/udp"
+      - "8443:8443/tcp"
     depends_on:
       - xray
 
@@ -72,7 +75,7 @@ services:
       - node-exporter
 
   node-exporter:
-    image: prom/node-exporter:v1.8.2
+    image: prom/node-exporter:v1.9.0
     restart: always
     network_mode: host  # needs to access to the host network interfaces
     volumes:
