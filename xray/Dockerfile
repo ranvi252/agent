@@ -19,7 +19,7 @@ COPY ./stop_cloudflared.sh /stop_cloudflared.sh
 COPY ./wg_template.conf /wg_template.conf
 COPY wg_monit /wg_monit
 COPY ./xray_monit /etc/monit.d/xray
-#COPY ./config1.json ./config1.json
+#COPY ./cloudflared_monit /etc/monit.d/cloudflared
 
 COPY entrypoint.sh entrypoint.sh
 
