@@ -50,6 +50,7 @@ services:
       - "2053:2053/tcp"
       - "2053:2053/udp"
       - "8443:8443/tcp"
+      - "8443:8443/udp"
     depends_on:
       - xray
 
