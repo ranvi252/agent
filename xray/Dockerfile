@@ -1,4 +1,4 @@
-FROM teddysun/xray:24.12.31
+FROM teddysun/xray:25.2.21
 
 RUN apk update && apk add curl wget wireguard-tools-wg-quick monit jq net-tools
 
@@ -19,7 +19,7 @@ COPY ./stop_cloudflared.sh /stop_cloudflared.sh
 COPY ./wg_template.conf /wg_template.conf
 COPY wg_monit /wg_monit
 COPY ./xray_monit /etc/monit.d/xray
-#COPY ./cloudflared_monit /etc/monit.d/cloudflared
+#COPY ./config1.json ./config1.json
 
 COPY entrypoint.sh entrypoint.sh
 
