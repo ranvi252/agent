@@ -9,6 +9,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      ENV_VAR: ${{ env.ENV_VAR }}
+      VPS_SERVERS: ${{ env.VPS_SERVERS }}
 
     steps:
       - name: Checkout Code
@@ -20,9 +23,6 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Deploy to VPS Servers
-        env:
-          ENV_VAR: ${{ secrets.ENV_VAR }}
-          VPS_SERVERS: ${{ secrets.VPS_SERVERS }}
         run: |
           # Create env_var file from ENV_VAR content
           mkdir -p ~/.ssh
