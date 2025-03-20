@@ -3,7 +3,7 @@
 ignoreip = 127.0.0.1/8 ::1 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16
 
 # Ban hosts for one hour:
-bantime = 3600
+bantime = 86400
 
 # Enable incremental banning
 bantime.increment = true
