@@ -20,6 +20,8 @@ services:
     build:
       context: ./xray
       dockerfile: Dockerfile
+    volumes:
+      - "/var/log:/var/log"  # Mount the host log directory to ensure logs are accessible
     cap_add:
       - NET_ADMIN
     restart: always
