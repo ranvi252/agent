@@ -27,6 +27,8 @@ services:
     restart: always
     env_file:
       - env_file
+    environment:
+      - TZ=UTC
     depends_on:
       - xray-config
     logging:
@@ -54,6 +56,8 @@ services:
       - "2053:2053/udp"
       - "8443:8443/tcp"
       - "8443:8443/udp"
+    environment:
+      - TZ=UTC
     depends_on:
       - xray
     logging:
