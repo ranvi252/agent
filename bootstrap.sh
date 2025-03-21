@@ -35,7 +35,6 @@ check_env_file() {
 prepare_vm() {
     echo "Preparing VM environment..."
     ./prepare_vm.sh
-    sleep 1
     echo "VM preparation completed."
 }
 
@@ -69,7 +68,6 @@ add_identifier() {
 setup_cron() {
     echo "Setting up cron jobs..."
     ./setup_cron.sh $REDEPLOY_INTERVAL
-    sleep 1
     echo "Cron setup completed."
 }
 
@@ -87,12 +85,25 @@ main() {
     echo
 
     check_root
+    sleep 0.5
+
     check_env_file
+    sleep 0.5
+
     prepare_vm
+    sleep 0.5
+
     install_docker
+    sleep 0.5
+
     add_identifier
+    sleep 0.5
+
     setup_cron
+    sleep 0.5
+
     deploy
+    sleep 0.5
     
     echo
     echo "Bootstrap completed successfully."
