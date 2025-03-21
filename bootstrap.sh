@@ -14,12 +14,16 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
+sleep 1
+
 if command_not_exists docker; then
     echo "Docker is not installed"
     curl -fsSL https://get.docker.com | sh
 else
     echo "Docker is installed"
 fi
+
+sleep 1
 
 file_path="env_file"
 if [ -f $file_path ]; then
@@ -29,6 +33,11 @@ else
     exit;
 fi
 
+# Set up UFW firewall
+echo "Setting up UFW firewall..."
+./setup_ufw.sh
+sleep 1
+
 identifier=$(head /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 10)
 
 echo "creating a new identifier and append to the env_file"
@@ -36,5 +45,6 @@ echo "IDENTIFIER=$identifier" >> ./env_file
 
 # setup redeploy cron
 ./setup_cron.sh $REDEPLOY_INTERVAL
+sleep 1
 
 docker compose up -d --build
