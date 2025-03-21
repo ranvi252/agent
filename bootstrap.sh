@@ -13,8 +13,13 @@ if [ "$EUID" -ne 0 ]; then
     echo "This script must be run as root."
     exit 1
 fi
-
 sleep 1
+
+# Set up UFW firewall
+echo "Preparing the VM..."
+./prepare_vm.sh
+sleep 1
+
 
 if command_not_exists docker; then
     echo "Docker is not installed"
@@ -22,7 +27,6 @@ if command_not_exists docker; then
 else
     echo "Docker is installed"
 fi
-
 sleep 1
 
 file_path="env_file"
@@ -32,10 +36,6 @@ else
     echo "'$file_path' file does not exist. use env_file.example as template"
     exit;
 fi
-
-# Set up UFW firewall
-echo "Setting up UFW firewall..."
-./setup_ufw.sh
 sleep 1
 
 identifier=$(head /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 10)
