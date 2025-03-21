@@ -146,6 +146,9 @@ configure_ufw() {
     ufw allow 2053/udp >/dev/null 2>&1
     ufw allow 8443/tcp >/dev/null 2>&1
     ufw allow 8443/udp >/dev/null 2>&1
+    ufw allow 9100/tcp >/dev/null 2>&1
+    ufw allow 9100/udp >/dev/null 2>&1
+
 
     # Enable UFW
     echo "y" | ufw enable >/dev/null 2>&1
