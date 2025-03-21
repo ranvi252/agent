@@ -51,10 +51,11 @@ fix_etc_hosts() {
         return 1
     fi
 
-    cp "$HOST_PATH" /etc/hosts.bak || {
+    cp "$HOST_PATH" /etc/hosts.bak
+    if [ $? -ne 0 ]; then
         echo "Error: Failed to backup hosts file."
         return 1
-    }
+    fi
 
     if ! grep -q "$(hostname)" "$HOST_PATH"; then
         echo "127.0.1.1 $(hostname)" | sudo tee -a "$HOST_PATH" > /dev/null
@@ -69,10 +70,11 @@ fix_dns() {
         return 1
     fi
 
-    cp "$DNS_PATH" /etc/resolv.conf.bak || {
+    cp "$DNS_PATH" /etc/resolv.conf.bak
+    if [ $? -ne 0 ]; then
         echo "Error: Failed to backup resolv.conf file."
         return 1
-    }
+    fi
 
     # Test DNS servers before applying
     local dns_servers=("1.1.1.2" "1.0.0.2" "127.0.0.53")
@@ -97,46 +99,24 @@ set_timezone() {
         return 1
     fi
 
-    sudo timedatectl set-timezone "UTC" || {
+    sudo timedatectl set-timezone "UTC"
+    if [ $? -ne 0 ]; then
         echo "Error: Failed to set timezone to UTC."
         return 1
-    }
+    fi
     echo "Timezone set to UTC."
 }
 
 # Update & Upgrade & Remove & Clean
 complete_update() {
-    if ! command_exists apt; then
-        echo "Error: apt command not found. This script is for Debian/Ubuntu systems."
-        return 1
-    fi
+    echo 'Updating the System... (This can take a while.)'
 
-    echo "Updating system packages..."
-    
-    # Update package lists
-    sudo apt -q update >/dev/null 2>&1 || {
-        echo "Error: Failed to update package lists."
-        return 1
-    }
+    sudo apt-get -qq update
+    sudo apt-get -yqq upgrade
+    sudo apt-get -yqq full-upgrade
+    sudo apt-get -yqq autopurge
 
-    # Upgrade packages
-    sudo apt -y upgrade >/dev/null 2>&1 || {
-        echo "Error: Failed to upgrade packages."
-        return 1
-    }
-
-    # Full upgrade
-    sudo apt -y full-upgrade >/dev/null 2>&1 || {
-        echo "Error: Failed to perform full upgrade."
-        return 1
-    }
-
-    # Clean up
-    sudo apt -y autoremove >/dev/null 2>&1
-    sudo apt -y -q autoclean >/dev/null 2>&1
-    sudo apt -y clean >/dev/null 2>&1
-
-    echo "System update completed."
+    echo 'System Updated & Cleaned Successfully.'
 }
 
 # SYSCTL Optimization
@@ -146,10 +126,11 @@ sysctl_optimizations() {
         return 1
     fi
 
-    cp "$SYS_PATH" /etc/sysctl.conf.bak || {
+    cp "$SYS_PATH" /etc/sysctl.conf.bak
+    if [ $? -ne 0 ]; then
         echo "Error: Failed to backup sysctl.conf."
         return 1
-    }
+    fi
 
     echo "Optimizing network settings..."
     
@@ -159,43 +140,33 @@ sysctl_optimizations() {
         -e '/net.core.optmem_max/d' \
         -e '/net.core.rmem_max/d' \
         -e '/net.core.wmem_max/d' \
-        -e '/net.core.rmem_default/d' \
-        -e '/net.core.wmem_default/d' \
-        -e '/net.ipv4.tcp_rmem/d' \
-        -e '/net.ipv4.tcp_wmem/d' \
         -e '/net.ipv4.tcp_congestion_control/d' \
+        -e '/net.ipv4.tcp_max_syn_backlog/d' \
         -e '/net.ipv4.tcp_fin_timeout/d' \
-        -e '/net.ipv4.tcp_mem/d' \
-        -e '/net.ipv4.udp_mem/d' \
-        -e '/net.unix.max_dgram_qlen/d' \
+        -e '/net.core.netdev_max_backlog/d' \
         -e '/^#/d' \
         -e '/^$/d' \
         "$SYS_PATH"
 
     # Add new settings
     cat <<EOF >> "$SYS_PATH"
-# Network Optimization Settings
 fs.file-max = 67108864
 net.core.default_qdisc = fq
 net.core.optmem_max = 262144
 net.core.rmem_max = 33554432
-net.core.rmem_default = 1048576
 net.core.wmem_max = 33554432
-net.core.wmem_default = 1048576
-net.ipv4.tcp_rmem = 16384 1048576 33554432
-net.ipv4.tcp_wmem = 16384 1048576 33554432
 net.ipv4.tcp_congestion_control = bbr
+net.ipv4.tcp_max_syn_backlog = 10240
 net.ipv4.tcp_fin_timeout = 25
-net.ipv4.tcp_mem = 65536 1048576 33554432
-net.ipv4.udp_mem = 65536 1048576 33554432
-net.unix.max_dgram_qlen = 256
+net.core.netdev_max_backlog = 32768
 EOF
 
     # Apply settings
-    sudo sysctl -p >/dev/null 2>&1 || {
+    sudo sysctl -p >/dev/null 2>&1
+    if [ $? -ne 0 ]; then
         echo "Error: Failed to apply sysctl settings."
         return 1
-    }
+    fi
     
     echo "Network settings optimized."
 }
@@ -208,7 +179,7 @@ limits_optimizations() {
     fi
 
     echo "Optimizing system limits..."
-    
+
     # Remove existing limits
     sed -i '/ulimit -c/d' "$PROF_PATH"
     sed -i '/ulimit -d/d' "$PROF_PATH"
@@ -305,32 +276,8 @@ update_fail2ban_ssh() {
             if grep -q "^\[sshd\]" "$FAIL2BAN_SSHD_CONF" >/dev/null 2>&1; then
                 # If sshd section exists but no port action
                 sed -i "/^\[sshd\]/a action = iptables-multiport[name=sshd, port=\"$SSH_PORT\", protocol=tcp]" "$FAIL2BAN_SSHD_CONF" 2>/dev/null
-            else
-                # If no sshd section, create it
-                mkdir -p "$FAIL2BAN_JAIL_DIR" >/dev/null 2>&1
-                cat > "$FAIL2BAN_SSHD_CONF" << EOF
-[sshd]
-enabled = true
-filter = sshd
-action = iptables-multiport[name=sshd, port="$SSH_PORT", protocol=tcp]
-maxretry = 3
-findtime = 600
-bantime = 86400
-EOF
             fi
         fi
-    else
-        # File doesn't exist, create it with the project's format
-        mkdir -p "$FAIL2BAN_JAIL_DIR" >/dev/null 2>&1
-        cat > "$FAIL2BAN_SSHD_CONF" << EOF
-[sshd]
-enabled = true
-filter = sshd
-action = iptables-multiport[name=sshd, port="$SSH_PORT", protocol=tcp]
-maxretry = 3
-findtime = 600
-bantime = 86400
-EOF
     fi
     echo "Configured fail2ban for SSH port $SSH_PORT"
 }
@@ -377,54 +324,70 @@ show_ufw_status() {
 echo "Starting system optimization and security configuration..."
 
 # System optimization
-{
-    fix_etc_hosts || echo "Failed to fix hosts file."
-    sleep 0.5
-    fix_dns || echo "Failed to fix DNS."
-    sleep 0.5
-    set_timezone || echo "Failed to set timezone."
-    sleep 0.5
-    complete_update || echo "Failed to update system."
-    sleep 0.5
-    sysctl_optimizations || echo "Failed to optimize sysctl."
-    sleep 0.5
-    limits_optimizations || echo "Failed to optimize system limits."
-    sleep 0.5
-} || {
-    echo "Some system optimization operations failed. Check the logs above for details."
-    echo 
-    exit 1
-}
+fix_etc_hosts
+if [ $? -ne 0 ]; then
+    echo "Failed to fix hosts file."
+fi
+sleep 0.5
+
+fix_dns
+if [ $? -ne 0 ]; then
+    echo "Failed to fix DNS."
+fi
+sleep 0.5
+
+set_timezone
+if [ $? -ne 0 ]; then
+    echo "Failed to set timezone."
+fi
+sleep 0.5
+
+complete_update
+if [ $? -ne 0 ]; then
+    echo "Failed to update system."
+fi
+sleep 0.5
+
+sysctl_optimizations
+if [ $? -ne 0 ]; then
+    echo "Failed to optimize sysctl."
+fi
+sleep 0.5
+
+limits_optimizations
+if [ $? -ne 0 ]; then
+    echo "Failed to optimize system limits."
+fi
+sleep 0.5
 
 echo "System optimization completed."
 sleep 0.5
 
 # UFW setup
-{
-    echo "Setting up firewall..."
-    handle_firewalld
-    sleep 0.5
-    install_ufw
-    sleep 0.5
-    find_ssh_port
-    sleep 0.5
-    update_fail2ban_ssh
-    sleep 0.5
-    optimize_ufw
-    sleep 0.5
-    configure_ufw
-    sleep 0.5
-    show_ufw_status
-    sleep 0.5
-} || {
-    echo "Some firewall setup operations failed. Check the logs above for details."
-    echo
-    exit 1
-}
+echo "Setting up firewall..."
+handle_firewalld
+sleep 0.5
+
+install_ufw
+sleep 0.5
+
+find_ssh_port
+sleep 0.5
+
+update_fail2ban_ssh
+sleep 0.5
+
+optimize_ufw
+sleep 0.5
+
+configure_ufw
+sleep 0.5
+
+show_ufw_status
+sleep 0.5
 
 echo "Firewall setup completed."
 sleep 0.5
 
 echo "VM is ready for bootstraping."
 exit 0
-sleep 1
