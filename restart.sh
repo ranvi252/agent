@@ -16,5 +16,11 @@ else
     exit;
 fi
 
+# Update firewall rules
+echo "Updating firewall rules..."
+./setup_ufw.sh
+sleep 1
+
 docker compose up -d --build
+sleep 1
 docker compose restart
