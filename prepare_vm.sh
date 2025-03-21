@@ -163,11 +163,6 @@ EOF
 
     # Apply settings
     sudo sysctl -p >/dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to apply sysctl settings."
-        return 1
-    fi
-    
     echo "Network settings optimized."
 }
 
@@ -189,7 +184,7 @@ install_ufw() {
         apt-get install -qqy ufw
         
         if ! command_exists ufw; then
-            echo "Failed to install UFW. Please check your system."
+            echo "Failed to install UFW."
             exit 1
         fi
     fi
@@ -268,12 +263,6 @@ configure_ufw() {
     echo "y" | ufw enable >/dev/null 2>&1
 }
 
-# Display UFW status
-show_ufw_status() {
-    echo "UFW status:"
-    ufw status
-}
-
 # Main execution
 echo "Preparing the VM..."
 
@@ -309,9 +298,6 @@ optimize_ufw
 sleep 0.5
 
 configure_ufw
-sleep 0.5
-
-show_ufw_status
 sleep 0.5
 
 echo "VM is ready for bootstraping."
