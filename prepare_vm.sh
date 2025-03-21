@@ -40,10 +40,6 @@ check_system() {
     fi
 }
 
-# Run initial checks
-check_root
-check_system
-
 # Fix Hosts file
 fix_etc_hosts() { 
     if [ ! -f "$HOST_PATH" ]; then
@@ -111,10 +107,10 @@ set_timezone() {
 complete_update() {
     echo 'Updating the System... (This can take a while.)'
 
-    sudo apt-get -qq update
-    sudo apt-get -yqq upgrade
-    sudo apt-get -yqq full-upgrade
-    sudo apt-get -yqq autopurge
+    sudo apt-get -qq update >/dev/null 2>&1
+    sudo apt-get -yqq upgrade >/dev/null 2>&1
+    sudo apt-get -yqq full-upgrade >/dev/null 2>&1
+    sudo apt-get -yqq autopurge >/dev/null 2>&1
 
     echo 'System Updated & Cleaned Successfully.'
 }
@@ -264,9 +260,16 @@ configure_ufw() {
 }
 
 # Main execution
+echo
 echo "Preparing the VM..."
+echo
 
-# System optimization
+check_root
+sleep 0.5
+
+check_system
+sleep 0.5
+
 fix_etc_hosts
 sleep 0.5
 
@@ -300,5 +303,7 @@ sleep 0.5
 configure_ufw
 sleep 0.5
 
+echo
 echo "VM is ready for bootstraping."
+echo
 exit 0
