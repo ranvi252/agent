@@ -15,12 +15,11 @@ if [ "$EUID" -ne 0 ]; then
 fi
 sleep 1
 
-# Set up UFW firewall
-echo "Preparing the VM..."
+# Prepare the VM
 ./prepare_vm.sh
 sleep 1
 
-
+# Install Docker
 if command_not_exists docker; then
     echo "Docker is not installed"
     curl -fsSL https://get.docker.com | sh
