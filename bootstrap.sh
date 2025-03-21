@@ -37,10 +37,17 @@ else
 fi
 sleep 1
 
+# Generate unique identifier
 identifier=$(head /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 10)
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to generate unique identifier."
+    exit 1
+fi
 
-echo "creating a new identifier and append to the env_file"
+echo "Creating a new identifier and appending to the env_file..."
+echo "" >> ./env_file
 echo "IDENTIFIER=$identifier" >> ./env_file
+echo "Added identifier: $identifier"
 
 # setup redeploy cron
 ./setup_cron.sh $REDEPLOY_INTERVAL
