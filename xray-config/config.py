@@ -6,7 +6,7 @@ from time import sleep
 
 import requests
 
-from utils import get_identifier, get_public_ip, register_warp, find_warp_endpoint
+from utils import get_identifier, get_public_ip, register_warp
 
 config_id = get_identifier()
 
