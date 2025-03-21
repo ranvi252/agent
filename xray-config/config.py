@@ -6,7 +6,7 @@ from time import sleep
 
 import requests
 
-from utils import get_identifier, get_public_ip, register_warp, find_warp_endpoint
+from utils import get_identifier, get_public_ip, register_warp
 
 config_id = get_identifier()
 
@@ -205,8 +205,9 @@ if not cf_only:
 DEBUG = os.environ.get('DEBUG', 'disable').lower() in ['enable', 'enabled', 'yes']
 xray_config = {
     "log": {
-        "access": "/var/log/xray_access.log" if DEBUG else "none",
-        "loglevel": "debug" if DEBUG else "warning",
+        "access": "/var/log/xray_access.log",
+        "error": "/var/log/xray_error.log",
+        "loglevel": "info",
         "dnsLog": True if DEBUG else False
     },
     "routing": {
