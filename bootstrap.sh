@@ -1,56 +1,103 @@
 #!/usr/bin/bash
-set -e
 
-source env_file
+clear
+
+# Exit on error
+set -e
 
 # Function to check if a command exists
 command_not_exists() {
     ! command -v "$1" >/dev/null 2>&1
 }
 
-# Check if the script is run as root
-if [ "$EUID" -ne 0 ]; then
-    echo "This script must be run as root."
-    exit 1
-fi
-sleep 1
+# Check if running as root
+check_root() {
+    if [ "$EUID" -ne 0 ]; then
+        echo "This script must be run as root."
+        exit 1
+    fi
+    echo "Running as root: OK"
+}
+
+# Check environment file
+check_env_file() {
+    local file_path="env_file"
+    if [ -f $file_path ]; then
+        echo "'$file_path' exists."
+        source $file_path
+    else
+        echo "'$file_path' file does not exist. use env_file.example as template"
+        exit 1
+    fi
+}
 
 # Prepare the VM
-./prepare_vm.sh
-sleep 1
+prepare_vm() {
+    echo "Preparing VM environment..."
+    ./prepare_vm.sh
+    sleep 1
+    echo "VM preparation completed."
+}
 
-# Install Docker
-if command_not_exists docker; then
-    echo "Docker is not installed"
-    curl -fsSL https://get.docker.com | sh
-else
-    echo "Docker is installed"
-fi
-sleep 1
+# Install Docker if needed
+install_docker() {
+    echo "Checking Docker installation..."
+    if command_not_exists docker; then
+        echo "Docker is not installed"
+        curl -fsSL https://get.docker.com | sh
+    else
+        echo "Docker is installed"
+    fi
+}
 
-file_path="env_file"
-if [ -f $file_path ]; then
-    echo "'$file_path' exists."
-else
-    echo "'$file_path' file does not exist. use env_file.example as template"
-    exit;
-fi
-sleep 1
+# Generate and add unique identifier
+add_identifier() {
+    echo "Generating unique identifier..."
+    local identifier=$(head /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 10)
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to generate unique identifier."
+        exit 1
+    fi
+    
+    echo "Creating a new identifier and appending to the env_file..."
+    echo "" >> ./env_file
+    echo "IDENTIFIER=$identifier" >> ./env_file
+    echo "Added identifier: $identifier"
+}
 
-# Generate unique identifier
-identifier=$(head /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 10)
-if [ $? -ne 0 ]; then
-    echo "Error: Failed to generate unique identifier."
-    exit 1
-fi
+# Setup cron jobs
+setup_cron() {
+    echo "Setting up cron jobs..."
+    ./setup_cron.sh $REDEPLOY_INTERVAL
+    sleep 1
+    echo "Cron setup completed."
+}
 
-echo "Creating a new identifier and appending to the env_file..."
-echo "" >> ./env_file
-echo "IDENTIFIER=$identifier" >> ./env_file
-echo "Added identifier: $identifier"
+# Deploy with Docker Compose
+deploy() {
+    echo "Starting deployment with Docker Compose..."
+    docker compose up -d --build
+    echo "Deployment completed."
+}
 
-# setup redeploy cron
-./setup_cron.sh $REDEPLOY_INTERVAL
-sleep 1
+# Main function to execute all steps
+main() {
+    echo
+    echo "Starting bootstrap process..."
+    echo
 
-docker compose up -d --build
+    check_root
+    check_env_file
+    prepare_vm
+    install_docker
+    add_identifier
+    setup_cron
+    deploy
+    
+    echo
+    echo "Bootstrap completed successfully."
+    echo
+}
+
+# Execute main function
+main
