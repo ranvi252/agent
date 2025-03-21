@@ -33,9 +33,7 @@ check_env_file() {
 
 # Prepare the VM
 prepare_vm() {
-    echo "Preparing VM environment..."
     ./prepare_vm.sh
-    echo "VM preparation completed."
 }
 
 # Install Docker if needed
