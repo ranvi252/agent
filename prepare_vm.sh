@@ -1,6 +1,6 @@
 #!/bin/bash
 
-clear
+set -e 
 
 # Trap errors
 trap 'echo "An error occurred. Exiting..."; exit 1' ERR
