@@ -171,52 +171,6 @@ EOF
     echo "Network settings optimized."
 }
 
-# System Limits Optimizations
-limits_optimizations() {
-    if [ ! -f "$PROF_PATH" ]; then
-        echo "Error: profile file not found at $PROF_PATH."
-        return 1
-    fi
-
-    echo "Optimizing system limits..."
-
-    # Remove existing limits
-    sed -i '/ulimit -c/d' "$PROF_PATH"
-    sed -i '/ulimit -d/d' "$PROF_PATH"
-    sed -i '/ulimit -f/d' "$PROF_PATH"
-    sed -i '/ulimit -i/d' "$PROF_PATH"
-    sed -i '/ulimit -l/d' "$PROF_PATH"
-    sed -i '/ulimit -m/d' "$PROF_PATH"
-    sed -i '/ulimit -n/d' "$PROF_PATH"
-    sed -i '/ulimit -q/d' "$PROF_PATH"
-    sed -i '/ulimit -s/d' "$PROF_PATH"
-    sed -i '/ulimit -t/d' "$PROF_PATH"
-    sed -i '/ulimit -u/d' "$PROF_PATH"
-    sed -i '/ulimit -v/d' "$PROF_PATH"
-    sed -i '/ulimit -x/d' "$PROF_PATH"
-
-    # Add new limits
-    cat <<EOF >> "$PROF_PATH"
-# System Limits
-ulimit -c unlimited
-ulimit -d unlimited
-ulimit -f unlimited
-ulimit -i unlimited
-ulimit -l unlimited
-ulimit -m unlimited
-ulimit -n 1048576
-ulimit -q unlimited
-ulimit -s -H 65536
-ulimit -s 32768
-ulimit -t unlimited
-ulimit -u unlimited
-ulimit -v unlimited
-ulimit -x unlimited
-EOF
-
-    echo "System limits optimized."
-}
-
 # Handle firewalld if installed
 handle_firewalld() {
     if command_exists firewall-cmd; then
@@ -321,50 +275,24 @@ show_ufw_status() {
 }
 
 # Main execution
-echo "Starting system optimization and security configuration..."
+echo "Preparing the VM..."
 
 # System optimization
 fix_etc_hosts
-if [ $? -ne 0 ]; then
-    echo "Failed to fix hosts file."
-fi
 sleep 0.5
 
 fix_dns
-if [ $? -ne 0 ]; then
-    echo "Failed to fix DNS."
-fi
 sleep 0.5
 
 set_timezone
-if [ $? -ne 0 ]; then
-    echo "Failed to set timezone."
-fi
 sleep 0.5
 
 complete_update
-if [ $? -ne 0 ]; then
-    echo "Failed to update system."
-fi
 sleep 0.5
 
 sysctl_optimizations
-if [ $? -ne 0 ]; then
-    echo "Failed to optimize sysctl."
-fi
 sleep 0.5
 
-limits_optimizations
-if [ $? -ne 0 ]; then
-    echo "Failed to optimize system limits."
-fi
-sleep 0.5
-
-echo "System optimization completed."
-sleep 0.5
-
-# UFW setup
-echo "Setting up firewall..."
 handle_firewalld
 sleep 0.5
 
@@ -384,9 +312,6 @@ configure_ufw
 sleep 0.5
 
 show_ufw_status
-sleep 0.5
-
-echo "Firewall setup completed."
 sleep 0.5
 
 echo "VM is ready for bootstraping."
