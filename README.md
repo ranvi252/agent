@@ -19,12 +19,17 @@
 13. Configuration self-testing using Xray-Knife.
 14. Utilize the NGINX web server to enhance resource efficiency and strengthen security.
 15. Ability to configure Custom DNS to block junk traffic at egress, effectively reducing bandwidth consumption.
+16. Enhanced security with fail2ban to protect against brute force attacks.
+17. Automatic firewall configuration through UFW to secure the server.
+18. User metrics for tracking approximate active unique users across all inbounds and monitoring blocked requests due to junk traffic (DNS and Custom CompassVPN routing rules), effectively optimizing bandwidth usage.
+19. WireGuard integration for WARP outbound connections with automatic fallback.
+20. Intelligent process monitoring for all services using Monit.
 
 
 ## Requirements
 
 - **VPS Architecture**: **AMD64** or **ARM64** _(recommended: 2 vCPUs and 2GB RAM)_.
-- **Supported OS**: **Ubuntu (20+)**, **Debian (10+)**, **Fedora (37+)**.
+- **Supported OS**: **Ubuntu (20+)**, **Debian (10+)**.
 - `git` and `curl` packages installed on the server:
 ```bash
 sudo apt update -q && sudo apt install -yq git curl
@@ -51,6 +56,12 @@ NGINX webserver to manage Xray inbounds and fallbacks, enhancing both performanc
 ### `metric-forwarder`
 Reads metrics from `xray-config`, `node-exporter`, and `v2ray-exporter` services and pushes them to a remote manager `Pushgateway` service or `Grafana Cloud Prometheus` endpoint.
 
+### `fail2ban`
+Protects the server against brute force attacks by monitoring logs and automatically blocking suspicious IPs.
+
+### `user-metrics`
+Tracks approximate active unique users across all configured inbounds and monitors blocked requests due to junk traffic, providing insights into bandwidth optimization.
+
 ## Setup Manager
 Please follow [this tutorial](https://github.com/compassvpn/manager) to create a manager. You can choose between the following options:
 - Grafana Cloud
@@ -75,11 +86,11 @@ The following services must be run on a VPS you intend to use as a VPN server.
 ## Configure `env_file`
 
 1. Copy the example file to `env_file`, the program's required configuration file:
-      ```
+      ```bash
       cp env_file.example env_file
       ```
 
-2. Set `METRIC_PUSH_METHOD` to either `pushgateway` or `grafana_cloud`, based on your chosen Manager option.
+2. Set `METRIC_PUSH_METHOD` to either `pushgateway` or `grafana_cloud`, based on your chosen Manager option. (recommended: `grafana_cloud` for simplicity.)
 
 3. if `METRIC_PUSH_METHOD=grafana_agent` _(set during the manager setup: [Option 1](https://github.com/compassvpn/manager?tab=readme-ov-file#option-1-use-garafana-cloud))_
       - set `GRAFANA_AGENT_REMOTE_WRITE_URL` _(Grafana remote URL)_
@@ -121,7 +132,9 @@ The following services must be run on a VPS you intend to use as a VPN server.
       - `vless-tcp-tls-direct`
       - `vless-hu-tls-direct`
       - `vless-hu-tls-cdn`
-      - _(Default when not set: `vless-tcp-tls-direct,vless-hu-tls-direct,vless-hu-tls-cdn`)_
+      - `vless-xhttp-quic-direct`
+      - `vless-xhttp-quic-cdn`
+      - _(Default when not set: all inbounds)_
 
 14. Set `AUTO_UPDATE` to:
       - `on` to enable automatic updates.
@@ -147,7 +160,7 @@ The following services must be run on a VPS you intend to use as a VPN server.
 
 17. Set `DEBUG` to:
       - `disable`. _(default)_
-      - `enable`: Show Xray-core debug and DNS logs.
+      - `enable`: Show Xray debug & DNS logs.
 
 
 ## Commands
@@ -162,12 +175,18 @@ The following services must be run on a VPS you intend to use as a VPN server.
 ./restart.sh
 ```
 
-### Update:
+### View Configuration Links:
 ```bash
-./update.sh && sleep 1 && ./restart.sh
+./show_configs.sh
+```
+
+### Check & Update:
+```bash
+./check_update.sh
 ```
 
 ### Show Logs:
 ```bash
 ./logs.sh
 ```
+
