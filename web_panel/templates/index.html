@@ -9,8 +9,10 @@
 </head>
 <body>
     <div class="container">
-        <h1 class="mb-4">CompassVPN Agent Configuration</h1>
-        <h3 class="mb-4">For Complete Documentation, Please Visit <a href="https://www.compassvpn.org/installation/configuration/">Here</a>.</h3>
+        <div class="mb-4">
+            <h1 class="mb-3 text-center">CompassVPN Agent Configuration</h1>
+            <h3 class="mb-3 text-center">For Complete Documentation, Please Visit <a href="https://www.compassvpn.org/installation/configuration" target="_blank" rel="noopener noreferrer">Here</a>.</h3>
+        </div>
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -106,18 +108,7 @@
 
                                     {% elif item.type == 'password' %}
                                         {% set placeholder = item.get('placeholder', 'Enter value') %} {# Generic default for password #}
-                                        <input type="password" class="form-control" id="{{ field_id }}" name="{{ key }}" value="{{ current_value }}" placeholder="{{ placeholder }}" {{ required_attr }}>
-
-                                    {% elif item.type == 'toggle' %}
-                                        {# Toggles don't typically use 'required', the hidden input handles submission #}
-                                        <div class="form-check form-switch">
-                                            {% set is_checked = current_value == item.on_value %}
-                                            <input class="form-check-input" type="checkbox" role="switch" id="{{ field_id }}" name="{{ key }}" value="{{ item.on_value }}" {% if is_checked %}checked{% endif %} {% if key == 'CF_ENABLE' %}onchange="handleConditionChange(this)"{% endif %}>
-                                            <input type="hidden" name="{{ key }}" value="{{ item.off_value }}" {% if is_checked %}disabled{% endif %}>
-                                            {% set on_text = 'On' if item.on_value == 'on' else 'Enabled' if item.on_value == 'enable' else 'True' if item.on_value == 'true' else item.on_value %}
-                                            {% set off_text = 'Off' if item.off_value == 'off' else 'Disabled' if item.off_value == 'disable' else 'False' if item.off_value == 'false' else item.off_value %}
-                                            <label class="form-check-label" for="{{ field_id }}">{{ off_text }} / {{ on_text }}</label>
-                                        </div>
+                                        <input type="password" class="form-control" id="{{ field_id }}" name="{{ key }}" placeholder="{{ placeholder }}" value="{{ current_value }}" {% if required_attr %}required{% endif %}>
 
                                     {% elif item.type == 'select' %}
                                         {# Selects use the default value, making 'required' less critical #}
@@ -156,27 +147,78 @@
                                         <input type="text" class="{{ input_class }}" id="{{ custom_input_id }}" name="{{ custom_field_id }}" placeholder="{{ custom_placeholder }}" value="{{ custom_text_value }}" {% if key == 'CUSTOM_DNS' %}data-is-custom-dns-text{% endif %}>
                                          {# Required handled by JS for custom DNS text #}
 
-                                    {% elif item.type == 'checkbox' %}
-                                        {# Checkboxes don't typically use 'required' in the same way #}
-                                        {% set current_list = current_value if current_value is iterable and current_value is not string else current_value.split(',') %}
-                                        <div class="border p-2 rounded">
-                                        {% for option in item.options %}
-                                            <div class="form-check">
-                                                <input class="form-check-input inbound-checkbox" type="checkbox" id="{{ field_id }}_{{ loop.index0 }}" name="{{ field_id }}" value="{{ option }}"
-                                                       {{ 'checked' if option in current_list }} onchange="validateInbounds()">
-                                                <label class="form-check-label" for="{{ field_id }}_{{ loop.index0 }}">
-                                                    {{ option }}
-                                                </label>
-                                            </div>
-                                        {% endfor %}
+                                    {% elif item.type == 'toggle' %}
+                                        {# Toggles don't typically use 'required', the hidden input handles submission #}
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="{{ field_id }}" name="{{ key }}" value="{{ item.on_value }}" {% if current_value == item.on_value %}checked{% endif %}>
+                                            {# Hidden input ensures the off_value is submitted if the toggle is not checked #}
+                                            <input type="hidden" name="{{ key }}" value="{{ item.off_value }}" {% if current_value == item.on_value %}disabled{% endif %}>
+                                            {% set on_text = 'On' if item.on_value == 'on' else 'Enabled' if item.on_value == 'enable' else 'True' if item.on_value == 'true' else item.on_value %}
+                                            {% set off_text = 'Off' if item.off_value == 'off' else 'Disabled' if item.off_value == 'disable' else 'False' if item.off_value == 'false' else item.off_value %}
+                                            <label class="form-check-label" for="{{ field_id }}">{{ off_text }} / {{ on_text }}</label>
                                         </div>
+
+                                    {% elif item.type == 'checkbox_group' %}
+                                        {# Custom rendering for the checkbox group #}
+                                        {# Get the current list of selected inbound names #}
+                                        {% set current_list = config_data.get(key, item.default) %}
+                                        {# Ensure current_list is actually a list, handle comma-separated string from env #}
+                                        {% if current_list is string %}
+                                            {% set current_list = current_list.split(',') %}
+                                        {% elif current_list is none %}
+                                            {% set current_list = [] %}
+                                        {% endif %}
+
+                                        {# Add the border DIV AFTER the label #}
+                                        <div class="border border-secondary rounded p-3 mt-2">
+                                            <div class="row">
+                                                {# Column for Direct Options - Add border and padding #}
+                                                <div class="col-md-6 border-end border-secondary pe-3">
+                                                    <h6>Direct Inbounds</h6>
+                                                    <hr class="mb-2">
+                                                    {# Removed wrapping border div #}
+                                                    {% if direct_options %}
+                                                        {% for option_dict in direct_options %}
+                                                            <div class="form-check">
+                                                                <input class="form-check-input inbound-checkbox" type="checkbox" id="{{ field_id }}_{{ option_dict.name }}" name="{{ key }}" value="{{ option_dict.name }}"
+                                                                   {{ 'checked' if option_dict.name in current_list }} onchange="validateInbounds()">
+                                                                <label class="form-check-label" for="{{ field_id }}_{{ option_dict.name }}">
+                                                                    {{ option_dict.label }}
+                                                                </label>
+                                                            </div>
+                                                        {% endfor %}
+                                                    {% else %}
+                                                        <p class="text-muted small">No direct options available.</p>
+                                                    {% endif %}
+                                                </div>
+
+                                                {# Column for CDN Options - Add padding #}
+                                                <div class="col-md-6 ps-3">
+                                                    <h6>CDN Inbounds</h6>
+                                                    <hr class="mb-2">
+                                                     {# Removed wrapping border div #}
+                                                     {% if cdn_options %}
+                                                         {% for option_dict in cdn_options %}
+                                                            <div class="form-check">
+                                                                <input class="form-check-input inbound-checkbox" type="checkbox" id="{{ field_id }}_{{ option_dict.name }}" name="{{ key }}" value="{{ option_dict.name }}"
+                                                                   {{ 'checked' if option_dict.name in current_list }} onchange="validateInbounds()">
+                                                                <label class="form-check-label" for="{{ field_id }}_{{ option_dict.name }}">
+                                                                    {{ option_dict.label }}
+                                                                </label>
+                                                            </div>
+                                                        {% endfor %}
+                                                    {% else %}
+                                                        <p class="text-muted small">No CDN options available.</p>
+                                                    {% endif %}
+                                                </div>
+                                            </div> {# End row #}
+                                        </div> {# End Border DIV #}
 
                                     {% endif %}
 
                                     {% if comment %}
                                         <div class="form-text">{{ comment | safe }}</div>
                                     {% endif %}
-
                                 </div>
                              {% endif %}
                         {% endfor %}
