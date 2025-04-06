@@ -12,8 +12,6 @@ config_id = get_identifier()
 
 config_uuid = os.popen(f"xray uuid -i {config_id}").read().replace("\n", "").strip()
 
-cf_only = os.environ.get('CF_ONLY', 'false') in ['True', 'true', 'yes']
-cf_enable = os.environ.get('CF_ENABLE', 'false') in ['True', 'true', 'yes']
 cf_api_token = os.environ.get('CF_API_TOKEN', None)
 cf_zone_id = os.environ.get('CF_ZONE_ID', None)
 nginx_path = os.environ.get('NGINX_PATH', None)
@@ -119,43 +117,41 @@ def create_cf_records():
             return None
 
     name = get_identifier() + "-" + server_ip.replace(".", "")  # Name of the record
-    if not cf_only:
-        create_dns_record(name + "-direct", False)  # direct (no proxy)
+    create_dns_record(name + "-direct", False)  # direct (no proxy)
     create_dns_record(name, True)  # direct (cf proxy)
 
     return name
 
 
-if cf_enable:
+if cf_api_token and cf_zone_id:
     get_domain()
     a_record = create_cf_records()
     if create_cf_records() is not None:
         subdomain = f"{a_record}.{domain}"
 
-        if not cf_only:
-            direct_subdomain = f"{a_record}-direct.{domain}"
-            if os.environ.get('SSL_PROVIDER', 'letsencrypt') == "letsencrypt":
-                ssl_provider_server = "--server letsencrypt"
-            else:
-                ssl_provider_server = "--server zerossl"
-            # create certificates
-            if os.path.exists(f"/root/.acme.sh/{direct_subdomain}_ecc/fullchain.cer"):
-                print("certificate already exists!")
-                # try to renew certs (if needed)
-                cmd = f'CF_Token={cf_api_token} .acme.sh/acme.sh {ssl_provider_server} --renew --dns dns_cf -d {direct_subdomain}'
-                os.system(cmd)
-            else:
-                os.system('.acme.sh/acme.sh --register-account -m my@example.com')
-                cmd = f'CF_Token={cf_api_token} .acme.sh/acme.sh {ssl_provider_server} --issue --dns dns_cf -d {direct_subdomain}'
-                print(cmd, flush=True)
-                os.system(cmd)
-                os.system("ls /root/.acme.sh/")
-            with open(f"/root/.acme.sh/{direct_subdomain}_ecc/fullchain.cer", 'r') as file:
-                cert_public = file.read()
-                cert_public = json.dumps(cert_public)[1:-1]
-            with open(f"/root/.acme.sh/{direct_subdomain}_ecc/{direct_subdomain}.key", 'r') as file:
-                cert_private = file.read()
-                cert_private = json.dumps(cert_private)[1:-1]
+        direct_subdomain = f"{a_record}-direct.{domain}"
+        if os.environ.get('SSL_PROVIDER', 'letsencrypt') == "letsencrypt":
+            ssl_provider_server = "--server letsencrypt"
+        else:
+            ssl_provider_server = "--server zerossl"
+        # create certificates
+        if os.path.exists(f"/root/.acme.sh/{direct_subdomain}_ecc/fullchain.cer"):
+            print("certificate already exists!")
+            # try to renew certs (if needed)
+            cmd = f'CF_Token={cf_api_token} .acme.sh/acme.sh {ssl_provider_server} --renew --dns dns_cf -d {direct_subdomain}'
+            os.system(cmd)
+        else:
+            os.system('.acme.sh/acme.sh --register-account -m my@example.com')
+            cmd = f'CF_Token={cf_api_token} .acme.sh/acme.sh {ssl_provider_server} --issue --dns dns_cf -d {direct_subdomain}'
+            print(cmd, flush=True)
+            os.system(cmd)
+            os.system("ls /root/.acme.sh/")
+        with open(f"/root/.acme.sh/{direct_subdomain}_ecc/fullchain.cer", 'r') as file:
+            cert_public = file.read()
+            cert_public = json.dumps(cert_public)[1:-1]
+        with open(f"/root/.acme.sh/{direct_subdomain}_ecc/{direct_subdomain}.key", 'r') as file:
+            cert_private = file.read()
+            cert_private = json.dumps(cert_private)[1:-1]
     initialized = True
 else:
   initialized = True
@@ -183,8 +179,7 @@ def get_config_links():
     configs = []
     if subdomain:
         configs.extend([inbound.get("link", "") for inbound in configured_inbounds if inbound.get("cloudflare", False)])
-        if not cf_only:
-            configs.extend([inbound.get("link", "") for inbound in configured_inbounds if inbound.get("cloudflare", False) is False])
+        configs.extend([inbound.get("link", "") for inbound in configured_inbounds if inbound.get("cloudflare", False) is False])
     return configs
 
 inbounds = [{
@@ -196,11 +191,10 @@ inbounds = [{
     },
     "tag": "doko"
 }]
-if cf_enable:
+if cf_api_token and cf_zone_id:
     inbounds.extend([inbound["inbound"] for inbound in configured_inbounds if inbound.get("cloudflare", False) is True and "inbound" in inbound])
 
-if not cf_only:
-    inbounds.extend([inbound["inbound"] for inbound in configured_inbounds if inbound.get("cloudflare", False) is False and "inbound" in inbound])
+inbounds.extend([inbound["inbound"] for inbound in configured_inbounds if inbound.get("cloudflare", False) is False and "inbound" in inbound])
 
 DEBUG = os.environ.get('DEBUG', 'disable').lower() in ['enable', 'enabled', 'yes']
 xray_config = {
