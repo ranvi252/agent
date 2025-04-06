@@ -2,6 +2,7 @@ import os
 import subprocess
 import signal
 import io
+import json
 from typing import Dict, List, Any, Union
 from flask import Flask, render_template, request, redirect, url_for, flash, Response
 
@@ -27,8 +28,32 @@ app.jinja_env.filters['format_label'] = format_label
 # --- End Custom Filter ---
 
 ENV_PATH = '../env_file' # Path to the main configuration file (in PARENT dir, relative to app.py)
+INBOUNDS_JSON_PATH = '../xray-config/inbounds.json' # Path to inbounds definition
 BOOTSTRAP_SCRIPT = '../bootstrap.sh' # Script to run after saving config (in PARENT dir)
 RESTART_SCRIPT = '../restart.sh' # Restart script in PARENT dir
+
+# Load inbounds data and separate into Direct/CDN lists
+direct_options = []
+cdn_options = []
+xray_inbounds_default = [] # Still needed for schema default
+
+try:
+    with open(INBOUNDS_JSON_PATH, 'r', encoding='utf-8') as f:
+        inbounds_data = json.load(f)
+    for ib in inbounds_data:
+        option_dict = {'name': ib['name'], 'label': ib['name']} # Use name as label for simplicity in grouped view
+        if ib.get('cloudflare', False):
+            cdn_options.append(option_dict)
+        else:
+            direct_options.append(option_dict)
+            xray_inbounds_default.append(ib['name']) # Default to selecting direct ones
+
+except Exception as e:
+    print(f"Error loading or processing {INBOUNDS_JSON_PATH}: {e}")
+    # Provide basic fallback if file fails to load
+    direct_options = [{'name': n, 'label': n} for n in ["vless-tcp-tls-direct", "vless-hu-tls-direct", "vless-xhttp-quic-direct"]]
+    cdn_options = [{'name': n, 'label': n} for n in ["vless-hu-tls-cdn", "vless-xhttp-quic-cdn"]]
+    xray_inbounds_default = ["vless-tcp-tls-direct", "vless-hu-tls-direct", "vless-xhttp-quic-direct"]
 
 # Defines the structure, types, defaults, and help text for all configuration fields.
 # This drives the web UI generation and saving logic.
@@ -111,56 +136,44 @@ CONFIG_SCHEMA: List[Dict[str, Any]] = [
         'comment': 'Token for IPInfo geolocation service. <a href="https://www.compassvpn.org/installation/configuration/#ipinfo_api_token" target="_blank" rel="noopener noreferrer">Read More.</a>'
     },
     {
-        'name': 'CF_ENABLE',
-        'type': 'toggle',
-        'default': 'true',
-        'on_value': 'true',
-        'off_value': 'false',
-        'comment': 'Enable Cloudflare CDN integration. <a href="https://www.compassvpn.org/installation/configuration/#cf_enable" target="_blank" rel="noopener noreferrer">Read More.</a>'
-    },
-    {
-        'name': 'CF_ONLY',
-        'type': 'toggle',
-        'default': 'false',
-        'on_value': 'true',
-        'off_value': 'false',
-        'comment': 'Force all traffic through Cloudflare (use only if direct access is blocked). <a href="https://www.compassvpn.org/installation/configuration/#cf_only" target="_blank" rel="noopener noreferrer">Read More.</a>',
-        'condition': {'field': 'CF_ENABLE', 'value': 'true'}
-    },
-    {
         'name': 'CF_API_TOKEN',
         'type': 'password',
-        'default': '',
-        'placeholder': 'Your Cloudflare API Token',
-        'comment': 'Cloudflare API token for managing DNS and SSL. <a href="https://www.compassvpn.org/installation/configuration/#cf_api_token" target="_blank" rel="noopener noreferrer">Read More.</a>',
+        'label': 'Cloudflare API Token',
+        'placeholder': 'Enter Cloudflare API Token',
+        'required': False,
+        'comment': 'API Token for Cloudflare access. Create with Zone.Zone:Read, Zone.DNS:Edit permissions. <a href="https://www.compassvpn.org/installation/configuration/#cf_api_token" target="_blank" rel="noopener noreferrer">Read More.</a>'
     },
     {
         'name': 'CF_ZONE_ID',
         'type': 'text',
-        'default': '',
-        'placeholder': 'Your Cloudflare Zone ID',
-        'comment': 'Cloudflare Zone ID for your domain. <a href="https://www.compassvpn.org/installation/configuration/#cf_zone_id" target="_blank" rel="noopener noreferrer">Read More.</a>',
+        'label': 'Cloudflare Zone ID',
+        'placeholder': 'Enter Cloudflare Zone ID',
+        'required': False,
+        'comment': 'Zone ID for your domain in Cloudflare. <a href="https://www.compassvpn.org/installation/configuration/#cf_zone_id" target="_blank" rel="noopener noreferrer">Read More.</a>'
     },
     {
         'name': 'CF_CLEAN_IP_DOMAIN',
         'type': 'text',
-        'default': '',
-        'placeholder': 'e.g., npmjs.com or 104.17.223.1',
-        'comment': 'Domain or IP used for CDN Config links. <a href="https://www.compassvpn.org/installation/configuration/#cf_clean_ip_domain" target="_blank" rel="noopener noreferrer">Read More.</a>',
+        'label': 'Cloudflare Clean IP Domain',
+        'default': 'npmjs.com',
+        'required': False,
+        'comment': 'Domain to use for finding clean Cloudflare IPs. Default: npmjs.com. <a href="https://www.compassvpn.org/installation/configuration/#cf_clean_ip_domain" target="_blank" rel="noopener noreferrer">Read More.</a>'
     },
     {
         'name': 'XRAY_OUTBOUND',
         'type': 'select',
-        'default': 'direct',
+        'label': 'Xray Outbound',
         'options': ['direct', 'warp'],
-        'comment': 'How server\'s outbound connections are routed. \'warp\' uses Cloudflare WARP. <a href="https://www.compassvpn.org/installation/configuration/#xray_outbound" target="_blank" rel="noopener noreferrer">Read More.</a>'
+        'default': 'direct',
+        'comment': 'Default outbound connection for Xray (Direct or Warp). <a href="https://www.compassvpn.org/installation/configuration/#xray_outbound" target="_blank" rel="noopener noreferrer">Read More.</a>'
     },
     {
         'name': 'XRAY_INBOUNDS',
-        'type': 'checkbox',
-        'default': ['vless-tcp-tls-direct', 'vless-hu-tls-direct', 'vless-hu-tls-cdn', 'vless-xhttp-quic-direct', 'vless-xhttp-quic-cdn'],
-        'options': ['vless-tcp-tls-direct', 'vless-hu-tls-direct', 'vless-hu-tls-cdn', 'vless-xhttp-quic-direct', 'vless-xhttp-quic-cdn'],
-        'comment': 'Select the client connection methods to enable. <a href="https://www.compassvpn.org/installation/configuration/#xray_inbounds" target="_blank" rel="noopener noreferrer">Read More.</a>'
+        'type': 'checkbox_group', # Conceptual type change for template
+        'label': 'Enabled Xray Inbounds',
+        # 'options' key removed - template uses direct_options/cdn_options
+        'default': xray_inbounds_default, # Keep default based on direct names
+        'comment': 'Select the inbound protocols you want to enable. <a href="https://www.compassvpn.org/installation/configuration/#xray_inbounds" target="_blank" rel="noopener noreferrer">Read More.</a>'
     },
     {
         'name': 'SSL_PROVIDER',
@@ -251,7 +264,7 @@ def write_env_file(file_path: str, env_data: Dict[str, Any]) -> None:
             value = ','.join(value)
 
         value_str = str(value).strip().replace('\n', ' ').replace('\r', '')
-        lines_to_write.append(f"{key}={value_str}\n")
+        lines_to_write.append(f"{key}={value_str}\n\n")
     # Append non-schema variables from the original file
     header_added = False
     for key, value in original_config.items():
@@ -259,11 +272,7 @@ def write_env_file(file_path: str, env_data: Dict[str, Any]) -> None:
             if not header_added:
                 lines_to_write.append("\n")
                 header_added = True
-            lines_to_write.append(f"{key}={value}\n")
-
-    # Add a final newline for POSIX compatibility / cleaner diffs
-    if lines_to_write:
-        lines_to_write.append("\n")
+            lines_to_write.append(f"{key}={value}\n\n")
 
     try:
         with open(file_path, 'w', newline='', encoding='utf-8') as f:
@@ -287,15 +296,15 @@ UI_GROUPS: Dict[str, List[str]] = {
         'DONOR', 'REDEPLOY_INTERVAL', 'IPINFO_API_TOKEN', 'AUTO_UPDATE'
     ],
     "Core Settings": [
-        'XRAY_OUTBOUND', 'XRAY_INBOUNDS',
-        'NGINX_PATH', 'NGINX_FAKE_WEBSITE'
+        'XRAY_INBOUNDS', 'XRAY_OUTBOUND', 
+        'NGINX_FAKE_WEBSITE', 'NGINX_PATH'
     ],
     "Cloudflare Integration": [
         'CF_API_TOKEN', 'CF_ZONE_ID',
-        'CF_ENABLE', 'CF_ONLY', 'CF_CLEAN_IP_DOMAIN'
+        'CF_CLEAN_IP_DOMAIN'
     ],
     "System & Other Settings": [
-        'SSL_PROVIDER', 'CUSTOM_DNS', 'DEBUG'
+        'CUSTOM_DNS', 'SSL_PROVIDER', 'DEBUG'
     ]
 }
 
@@ -310,8 +319,12 @@ def index() -> Union[str, Response]:
     for item in CONFIG_SCHEMA:
         key = item['name']
         config_data[key] = current_config.get(key, item.get('default', ''))
-        if item['type'] == 'checkbox' and key not in current_config:
-            config_data[key] = item.get('default', [])
+        # Adjust handling for checkbox_group default loading
+        if item['type'] == 'checkbox_group' and key not in current_config:
+             config_data[key] = item.get('default', [])
+        # Adjust ensure checkbox_group values are lists for template logic
+        if item['type'] == 'checkbox_group' and key in current_config and isinstance(current_config[key], str):
+             config_data[key] = current_config[key].split(',')
 
     # Handle form submission
     if request.method == 'POST':
@@ -323,8 +336,10 @@ def index() -> Union[str, Response]:
             if not values: continue
             schema_item = next((item for item in CONFIG_SCHEMA if item['name'] == key), None)
             if not schema_item: continue
-            if schema_item['type'] == 'checkbox':
-                env_to_save[key] = values
+            # Adjust saving logic for checkbox_group
+            if schema_item['type'] == 'checkbox_group':
+                 # Join selected values into comma-separated string
+                 env_to_save[key] = ','.join(values)
             elif key == 'CUSTOM_DNS' and values[0] == 'custom':
                 custom_text = request.form.get('CUSTOM_DNS_TEXT', '').strip()
                 env_to_save[key] = custom_text if custom_text else next((item['default'] for item in CONFIG_SCHEMA if item['name'] == key), 'custom')
@@ -341,9 +356,9 @@ def index() -> Union[str, Response]:
             shutdown_server()
             # Return a simple styled message
             return '''
-                <div style="padding: 20px; font-family: sans-serif; background-color: #e9ecef; border-radius: 5px;">
-                    <h4>Configuration Saved</h4>
-                    <p>Panel is shutting down. To reopen, run <code>./start_panel.sh</code> in the server terminal.</p>
+                <div style="padding: 20px; font-family: sans-serif; background-color: rgb(139, 92, 246, 0.5); border-radius: 10px;">
+                    <h3>Configuration Saved.</h3>
+                    <p>Panel is closed. To reopen, run <strong>./start_panel.sh</strong> in the server terminal.</p>
                 </div>
             '''
         elif action == 'save_close_bootstrap':
@@ -412,24 +427,21 @@ def index() -> Union[str, Response]:
         flash(f'{os.path.basename(ENV_PATH)} saved successfully!', 'success')
         return redirect(url_for('index'))
 
-    # Prepare UI groups for rendering
-    grouped_schema = {group: [] for group in UI_GROUPS}
-    all_grouped_keys = set(key for group_keys in UI_GROUPS.values() for key in group_keys)
+    # Prepare UI groups for rendering, RESPECTING UI_GROUPS ORDER
+    grouped_schema = {group: [] for group in UI_GROUPS} # Initialize with keys from UI_GROUPS
+    schema_dict = {item['name']: item for item in CONFIG_SCHEMA} # Faster lookup
 
-    # Add fields to their respective groups
-    for item in CONFIG_SCHEMA:
-        key = item['name']
-        found_in_group = False
-        for group, keys in UI_GROUPS.items():
-            if key in keys:
-                grouped_schema[group].append(item)
-                found_in_group = True
-                break
-        # Optional: Handle ungrouped items if necessary
-        # if not found_in_group:
-        #    print(f"Warning: Field '{key}' not assigned to any UI group.")
+    # Iterate through UI_GROUPS to control order
+    for group_title, keys_in_order in UI_GROUPS.items():
+        for key in keys_in_order:
+            if key in schema_dict:
+                grouped_schema[group_title].append(schema_dict[key])
+            else:
+                 print(f"Warning: Key '{key}' in UI_GROUPS['{group_title}'] not found in CONFIG_SCHEMA.")
 
-    return render_template('index.html', schema=CONFIG_SCHEMA, config_data=config_data, ui_groups=grouped_schema)
+    # Pass the correctly ordered grouped_schema as ui_groups to the template
+    return render_template('index.html', schema=CONFIG_SCHEMA, config_data=config_data, ui_groups=grouped_schema,
+                           direct_options=direct_options, cdn_options=cdn_options)
 
 # Script entry point: Set up directories and run the Flask app.
 if __name__ == '__main__':
