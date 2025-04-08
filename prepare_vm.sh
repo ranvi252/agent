@@ -366,19 +366,19 @@ check_required_ports() {
         if [ -n "$listening_process" ]; then
             conflict_found=1
             echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-            echo "!! ERROR: Port $port is already in use by the following process:               !!"
+            echo "!! ERROR: Port $port is already in use by the following process: "
             # Attempt to extract process information more reliably
             local pid
             pid=$(echo "$listening_process" | grep -oP 'pid=\K\d+')
             if [ -n "$pid" ]; then
                 local process_name
                 process_name=$(ps -p "$pid" -o comm=)
-                echo "!! PID: $pid, Name: $process_name                                                !!"
+                echo "!! PID: $pid, Name: $process_name "
             else
                  # Fallback to showing the ss output if PID extraction fails
-                echo "!! $listening_process                                                     !!"
+                echo "!! $listening_process "
             fi
-            echo "!! Please stop this process manually before running the script again.       !!"
+            echo "!! Please stop this process manually before running the script again. "
             echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
             exit 1
         fi
