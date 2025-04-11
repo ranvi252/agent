@@ -1,51 +1,97 @@
-name: Deploy Agent
+name: Run Bootstrap Script Remotely
 
 on:
-  workflow_dispatch:       # Allows manual triggering
-  push:
-    branches:
-      - main              # Trigger on push to main branch (or specify target branch)
+  workflow_dispatch: # Allows manual triggering
+    # Add an input to control debug logging visibility
+    inputs:
+      debug_logs:
+        description: 'Show bootstrap.sh logs (true/false)'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
-  deploy:
+  # Job to prepare the server list for the matrix
+  setup:
+    name: Prepare Server Matrix
     runs-on: ubuntu-latest
+    outputs:
+      # Output the JSON string representation of the server indices
+      server_indices_json: ${{ steps.generate_matrix.outputs.server_indices_json }}
+    steps:
+      - name: Install jq
+        run: sudo apt-get update -q && sudo apt-get install -y -q jq
+
+      - name: Generate server matrix JSON
+        id: generate_matrix
+        env:
+          SERVERS_SECRET: ${{ secrets.SERVERS }}
+        run: |
+          if [[ -z "$SERVERS_SECRET" ]]; then
+            echo "::error::SERVERS secret is not set or is empty."
+            # Output empty JSON array on error to prevent matrix failure
+            echo "server_indices_json=[]" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          # Use jq to get just the indices + 1 into a JSON array
+          # Process line-by-line (-R), filter empty, slurp (-s), then generate indices
+          indices_json=$(printf "%s" "$SERVERS_SECRET" | jq -R 'select(length > 0)' | jq -sc 'to_entries | map(.key + 1)')
+          echo "Generated Indices JSON: $indices_json"
+          # Use the delimiter method for setting multiline outputs
+          echo "server_indices_json<<EOF" >> $GITHUB_OUTPUT
+          echo "$indices_json" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+  # Job to deploy to a single server, run for each server in the matrix
+  deploy_server:
+    # This job depends on the setup job completing successfully
+    needs: setup
+    # Dynamically set the job name using the server index from the matrix
+    name: Deploy to Server ${{ matrix.index }}
+    runs-on: ubuntu-latest
+    # Define the matrix strategy using the JSON output from the setup job
+    strategy:
+      fail-fast: false # Prevent other jobs from cancelling if one server fails
+      matrix:
+        index: ${{ fromJson(needs.setup.outputs.server_indices_json) }}
+
     env:
-      ENV_VAR: ${{ env.ENV_VAR }}
-      VPS_SERVERS: ${{ env.VPS_SERVERS }}
+      # Make secrets available to the script conditionally
+      SSH_KEY_SECRET: ${{ secrets.SSH_KEY }}
+      SERVERS_SECRET: ${{ secrets.SERVERS }}
+      ENV_FILE_CONTENT: ${{ secrets.ENV_FILE }} # Content for the env_file (using ENV_FILE secret)
 
     steps:
-      - name: Checkout Code
+      # Conditional setup steps, run per job instance
+      - name: Install sshpass if needed
+        if: env.SSH_KEY_SECRET == '' # Run only if SSH_KEY secret is not set
+        run: |
+          echo "SSH_KEY secret not found or empty. Installing sshpass for password authentication."
+          sudo apt-get update -q && sudo apt-get install -y -q sshpass
+        shell: bash
+
+      - name: Setup SSH Agent if needed
+        uses: webfactory/ssh-agent@v0.9.1
+        if: env.SSH_KEY_SECRET != '' # Run only if SSH_KEY secret is set
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
+
+      # Checkout code needed for the script file
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.5.3
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Deploy to VPS Servers
-        run: |
-          # Create env_var file from ENV_VAR content
-          mkdir -p ~/.ssh
-          echo "${ENV_VAR}" > env_var
-          
-          # Loop through each server in VPS_SERVERS
-          while IFS= read -r SERVER; do
-            echo "Deploying to $SERVER"
-            # Add the server to known_hosts to avoid security prompts
-            ssh-keyscan -H "$SERVER" >> ~/.ssh/known_hosts
-            # Copy env_var file to /tmp on the server
-            scp env_var "$SERVER:/tmp/env_var"
-            # Execute commands on the server:
-            # If the 'agent' directory exists, perform git pull; otherwise, clone the repository
-            ssh "$SERVER" '
-              if [ -d agent ]; then
-                cd agent && git pull;
-              else
-                git clone https://github.com/compassvpn/agent.git;
-              fi;
-              cd agent;
-              cp /tmp/env_var ./env_file;
-              chmod +x bootstrap.sh;
-              ./bootstrap.sh;
-            ' || { echo "Failed on $SERVER"; exit 1; }
-          done <<< "${VPS_SERVERS}"
+      # Main execution step, now runs once per server from the matrix
+      - name: Connect, Update Repo, and Run Bootstrap
+        env:
+          # Pass matrix index and secrets/inputs as environment variables to the script
+          SERVER_INDEX: ${{ matrix.index }}
+          SERVERS_SECRET: ${{ secrets.SERVERS }}
+          SSH_KEY_SECRET: ${{ secrets.SSH_KEY }}
+          ENV_FILE_CONTENT: ${{ secrets.ENV_FILE }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          DEBUG_LOGS: ${{ github.event.inputs.debug_logs }}
+          # Pass the path to the *other* script (remote_bootstrap.sh) as an env var
+          LOCAL_SCRIPT_PATH: ".github/scripts/remote_bootstrap.sh"
+        run: bash .github/scripts/deploy_logic.sh
+        shell: bash
