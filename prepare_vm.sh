@@ -120,24 +120,12 @@ set_timezone() {
     echo "Timezone set to UTC."
 }
 
-# Install necessary packages including curl
+# Update & Install necessary packages
 install_base_packages() {
     echo "Installing base packages..."
     apt-get update -qq
     apt-get install -yqq curl wget sudo coreutils iproute2 lsof
     echo "Base packages installed."
-}
-
-# Update & Upgrade & Remove & Clean
-complete_update() {
-    echo 'Updating the System... (This can take a while.)'
-
-    sudo apt-get -qq update
-    sudo apt-get -yqq upgrade
-    sudo apt-get -yqq full-upgrade
-    sudo apt-get -yqq autopurge
-
-    echo 'System Updated & Cleaned Successfully.'
 }
 
 # SYSCTL Optimization
@@ -416,9 +404,6 @@ fix_dns
 sleep 0.5
 
 set_timezone
-sleep 0.5
-
-complete_update
 sleep 0.5
 
 # Conditionally run sysctl optimizations
