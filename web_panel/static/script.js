@@ -29,13 +29,13 @@ function handleConditionChange(triggerElement) {
             isVisible = false;
         }
 
-        // Add/Remove 'required' on child inputs/selects/textareas based on visibility,
-        // EXCLUDING the custom DNS text input (handled separately).
-        dependentField.querySelectorAll('input[type="text"]:not(.custom-dns-text-input), input[type="password"], select, textarea').forEach(input => {
-            if (isVisible) {
-                input.setAttribute('required', '');
-            } else {
+        // UPDATED: All inputs will have required attribute unless hidden
+        // (excluding toggle switches, hidden inputs, and custom DNS text when appropriate)
+        dependentField.querySelectorAll('input:not([role="switch"]):not([type="hidden"]), select, textarea').forEach(input => {
+            if (!isVisible) {
                 input.removeAttribute('required');
+            } else if (!(input.classList.contains('custom-dns-text-input') && !document.getElementById('CUSTOM_DNS').value === 'custom')) {
+                input.setAttribute('required', '');
             }
         });
     });
@@ -164,13 +164,38 @@ function validateSpecificFields() {
     }
 }
 
+// Initialize checkboxes in a group to not be individually required
+function initializeCheckboxGroups() {
+    // Remove required attribute from individual checkboxes, as we use custom validation
+    document.querySelectorAll('.inbound-checkbox').forEach(checkbox => {
+        checkbox.removeAttribute('required');
+    });
+    
+    // Run initial validation to ensure proper state
+    validateInbounds();
+}
+
 // --- Initialization on Page Load ---
 document.addEventListener('DOMContentLoaded', function() {
+
+    // Initialize checkbox groups first
+    initializeCheckboxGroups();
 
     // 1. Initialize all conditional field visibility and 'required' states
     //    Find all elements that trigger conditional changes and run the handler.
     document.querySelectorAll('select[onchange^="handleConditionChange"], input[type="checkbox"][onchange^="handleConditionChange"]').forEach(trigger => {
         handleConditionChange(trigger);
+    });
+
+    // NEW: Make sure all visible non-conditional inputs are also required
+    document.querySelectorAll('input:not([role="switch"]):not([type="hidden"]):not(.custom-dns-text-input):not([type="checkbox"]), select:not(.custom-select), textarea').forEach(input => {
+        // Only set required if the parent element is visible and not a conditional field
+        const parentContainer = input.closest('.mb-3');
+        if (parentContainer && 
+            !parentContainer.classList.contains('conditional-field') && 
+            window.getComputedStyle(parentContainer).display !== 'none') {
+            input.setAttribute('required', '');
+        }
     });
 
     // 2. Initialize visibility for specific complex toggles
