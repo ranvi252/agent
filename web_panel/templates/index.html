@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CompassVPN Agent Configuration Panel</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
         <div class="mb-4">
             <h1 class="mb-3 text-center">CompassVPN Agent Configuration</h1>
-            <h3 class="mb-3 text-center">For Complete Documentation, Please Visit <a href="https://www.compassvpn.org/installation/configuration" target="_blank" rel="noopener noreferrer">Here</a>.</h3>
+            <h3 class="mb-3 text-center">Read Full Documentation <a href="https://www.compassvpn.org/installation/configuration" target="_blank" rel="noopener noreferrer">Here</a>.</h3>
         </div>
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -23,6 +24,10 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
+
+        <div class="alert alert-secondary mb-3" role="alert">
+            <i class="bi bi-info-circle me-2"></i> All fields are required.
+        </div>
 
         <form method="POST">
             {# Generate a dictionary mapping field name to schema item for easy lookup #}
@@ -73,7 +78,13 @@
 
                                     {# --- Render Input based on Schema Type --- #}
                                     {% set is_conditionally_required = condition is defined %}
-                                    {% set required_attr = 'required' if not is_conditionally_required else '' %} {# Default required unless conditional #}
+                                    {% set required_attr = 'required' %}  {# Always set required by default #}
+                                    
+                                    {# Special handling for checkbox_group - no required on individual checkboxes #}
+                                    {% if item.type == 'checkbox_group' %}
+                                        {% set required_attr = '' %}
+                                    {% endif %}
+                                    
                                     {# Note: JS will handle adding/removing 'required' for conditional fields based on visibility #}
 
                                     {% if item.type == 'text' %}
@@ -181,7 +192,7 @@
                                                         {% for option_dict in direct_options %}
                                                             <div class="form-check">
                                                                 <input class="form-check-input inbound-checkbox" type="checkbox" id="{{ field_id }}_{{ option_dict.name }}" name="{{ key }}" value="{{ option_dict.name }}"
-                                                                   {{ 'checked' if option_dict.name in current_list }} onchange="validateInbounds()">
+                                                                   {{ 'checked' if option_dict.name in current_list }} onchange="validateInbounds()" novalidate>
                                                                 <label class="form-check-label" for="{{ field_id }}_{{ option_dict.name }}">
                                                                     {{ option_dict.label }}
                                                                 </label>
@@ -201,7 +212,7 @@
                                                          {% for option_dict in cdn_options %}
                                                             <div class="form-check">
                                                                 <input class="form-check-input inbound-checkbox" type="checkbox" id="{{ field_id }}_{{ option_dict.name }}" name="{{ key }}" value="{{ option_dict.name }}"
-                                                                   {{ 'checked' if option_dict.name in current_list }} onchange="validateInbounds()">
+                                                                   {{ 'checked' if option_dict.name in current_list }} onchange="validateInbounds()" novalidate>
                                                                 <label class="form-check-label" for="{{ field_id }}_{{ option_dict.name }}">
                                                                     {{ option_dict.label }}
                                                                 </label>
