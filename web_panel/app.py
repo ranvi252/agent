@@ -44,6 +44,7 @@ try:
         option_dict = {'name': ib['name'], 'label': ib['name']} # Use name as label for simplicity in grouped view
         if ib.get('cloudflare', False):
             cdn_options.append(option_dict)
+            xray_inbounds_default.append(ib['name']) # Add CDN inbounds to defaults too
         else:
             direct_options.append(option_dict)
             xray_inbounds_default.append(ib['name']) # Default to selecting direct ones
@@ -53,7 +54,8 @@ except Exception as e:
     # Provide basic fallback if file fails to load
     direct_options = [{'name': n, 'label': n} for n in ["vless-tcp-tls-direct", "vless-hu-tls-direct", "vless-xhttp-quic-direct"]]
     cdn_options = [{'name': n, 'label': n} for n in ["vless-hu-tls-cdn", "vless-xhttp-quic-cdn"]]
-    xray_inbounds_default = ["vless-tcp-tls-direct", "vless-hu-tls-direct", "vless-xhttp-quic-direct"]
+    # Include both direct and CDN inbounds in defaults
+    xray_inbounds_default = ["vless-tcp-tls-direct", "vless-hu-tls-direct", "vless-xhttp-quic-direct", "vless-hu-tls-cdn", "vless-xhttp-quic-cdn"]
 
 # Defines the structure, types, defaults, and help text for all configuration fields.
 # This drives the web UI generation and saving logic.
@@ -140,7 +142,6 @@ CONFIG_SCHEMA: List[Dict[str, Any]] = [
         'type': 'password',
         'label': 'Cloudflare API Token',
         'placeholder': 'Enter Cloudflare API Token',
-        'required': False,
         'comment': 'API Token for Cloudflare access. Create with Zone.Zone:Read, Zone.DNS:Edit permissions. <a href="https://www.compassvpn.org/installation/configuration/#cf_api_token" target="_blank" rel="noopener noreferrer">Read More.</a>'
     },
     {
@@ -148,7 +149,6 @@ CONFIG_SCHEMA: List[Dict[str, Any]] = [
         'type': 'text',
         'label': 'Cloudflare Zone ID',
         'placeholder': 'Enter Cloudflare Zone ID',
-        'required': False,
         'comment': 'Zone ID for your domain in Cloudflare. <a href="https://www.compassvpn.org/installation/configuration/#cf_zone_id" target="_blank" rel="noopener noreferrer">Read More.</a>'
     },
     {
@@ -156,7 +156,6 @@ CONFIG_SCHEMA: List[Dict[str, Any]] = [
         'type': 'text',
         'label': 'Cloudflare Clean IP Domain',
         'default': 'npmjs.com',
-        'required': False,
         'comment': 'Domain to use for finding clean Cloudflare IPs. Default: npmjs.com. <a href="https://www.compassvpn.org/installation/configuration/#cf_clean_ip_domain" target="_blank" rel="noopener noreferrer">Read More.</a>'
     },
     {
@@ -171,9 +170,8 @@ CONFIG_SCHEMA: List[Dict[str, Any]] = [
         'name': 'XRAY_INBOUNDS',
         'type': 'checkbox_group', # Conceptual type change for template
         'label': 'Enabled Xray Inbounds',
-        # 'options' key removed - template uses direct_options/cdn_options
         'default': xray_inbounds_default, # Keep default based on direct names
-        'comment': 'Select the inbound protocols you want to enable. <a href="https://www.compassvpn.org/installation/configuration/#xray_inbounds" target="_blank" rel="noopener noreferrer">Read More.</a>'
+        'comment': 'Select at least one inbound protocol to enable. <a href="https://www.compassvpn.org/installation/configuration/#xray_inbounds" target="_blank" rel="noopener noreferrer">Read More.</a>'
     },
     {
         'name': 'SSL_PROVIDER',
@@ -338,6 +336,9 @@ def index() -> Union[str, Response]:
             if not schema_item: continue
             # Adjust saving logic for checkbox_group
             if schema_item['type'] == 'checkbox_group':
+                 # Handle case where only one checkbox is selected (not returned as list)
+                 if not isinstance(values, list):
+                     values = [values]
                  # Join selected values into comma-separated string
                  env_to_save[key] = ','.join(values)
             elif key == 'CUSTOM_DNS' and values[0] == 'custom':
