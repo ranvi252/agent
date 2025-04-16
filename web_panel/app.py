@@ -131,13 +131,6 @@ CONFIG_SCHEMA: List[Dict[str, Any]] = [
         'comment': 'How often configurations are reset (e.g., 7d for weekly). <a href="https://www.compassvpn.org/installation/configuration/#redeploy_interval" target="_blank" rel="noopener noreferrer">Read More.</a>'
     },
     {
-        'name': 'IPINFO_API_TOKEN',
-        'type': 'password',
-        'default': '',
-        'placeholder': 'Your IPInfo.io API Token',
-        'comment': 'Token for IPInfo geolocation service. <a href="https://www.compassvpn.org/installation/configuration/#ipinfo_api_token" target="_blank" rel="noopener noreferrer">Read More.</a>'
-    },
-    {
         'name': 'CF_API_TOKEN',
         'type': 'password',
         'label': 'Cloudflare API Token',
@@ -291,7 +284,7 @@ UI_GROUPS: Dict[str, List[str]] = {
         'PUSHGATEWAY_URL', 'PUSHGATEWAY_AUTH_USER', 'PUSHGATEWAY_AUTH_PASSWORD'
     ],
     "General Settings": [
-        'DONOR', 'REDEPLOY_INTERVAL', 'IPINFO_API_TOKEN', 'AUTO_UPDATE'
+        'DONOR', 'REDEPLOY_INTERVAL', 'AUTO_UPDATE'
     ],
     "Core Settings": [
         'XRAY_INBOUNDS', 'XRAY_OUTBOUND', 
