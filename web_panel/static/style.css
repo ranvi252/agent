@@ -35,7 +35,6 @@ body {
     display: none;
 }
 
-/* Hide custom DNS text input initially */
 .custom-dns-text-input {
     display: none;
 }
@@ -84,4 +83,56 @@ a:hover {
 .form-check-input:focus {
     border-color: rgba(139, 92, 246, 0.5);
     box-shadow: 0 0 0 0.25rem rgba(139, 92, 246, 0.5);
+}
+
+.advanced-toggle-indicator {
+    font-size: 0.9em; 
+    transition: color 0.15s ease-in-out;
+}
+
+.btn-header:hover .advanced-toggle-indicator {
+    color: var(--bs-light) !important; 
+}
+
+.btn-header-toggle {
+    background-color: transparent;
+    border: none;
+    color: inherit;
+    padding: 0;
+    text-align: left;
+    box-shadow: none !important;
+    font-size: inherit; 
+    font-weight: inherit;
+    line-height: inherit;
+}
+
+.btn-header-toggle:focus,
+.btn-header-toggle:active {
+    outline: none !important;
+    box-shadow: none !important;
+    color: inherit; 
+}
+
+.btn-header-toggle:hover .advanced-toggle-indicator {
+    color: var(--bs-light) !important;
+}
+
+
+#collapse-advanced-settings {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.7s ease-in-out, opacity 0.5s ease-in-out;
+}
+
+#collapse-advanced-settings.show {
+    max-height: 1000px; 
+    opacity: 1;
+}
+
+.form-control:focus,
+.form-select:focus,
+.custom-dns-text-input:focus { 
+    border-color: rgba(139, 92, 246, 0.5);
+    box-shadow: 0 0 0 0.25rem rgba(139, 92, 246, 0.5); 
 }
