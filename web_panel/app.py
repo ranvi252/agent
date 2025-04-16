@@ -119,7 +119,7 @@ CONFIG_SCHEMA: List[Dict[str, Any]] = [
     {
         'name': 'DONOR',
         'type': 'text',
-        'default': '',
+        'default': 'compass',
         'placeholder': 'e.g., my-server-01',
         'comment': 'Identifier for this server instance in metrics. <a href="https://www.compassvpn.org/installation/configuration/#donor" target="_blank" rel="noopener noreferrer">Read More.</a>'
     },
@@ -163,7 +163,7 @@ CONFIG_SCHEMA: List[Dict[str, Any]] = [
         'name': 'XRAY_INBOUNDS',
         'type': 'checkbox_group', # Conceptual type change for template
         'label': 'Enabled Xray Inbounds',
-        'default': xray_inbounds_default, # Keep default based on direct names
+        'default': xray_inbounds_default,
         'comment': 'Select at least one inbound protocol to enable. <a href="https://www.compassvpn.org/installation/configuration/#xray_inbounds" target="_blank" rel="noopener noreferrer">Read More.</a>'
     },
     {
@@ -288,14 +288,17 @@ UI_GROUPS: Dict[str, List[str]] = {
     ],
     "Core Settings": [
         'XRAY_INBOUNDS', 'XRAY_OUTBOUND', 
-        'NGINX_FAKE_WEBSITE', 'NGINX_PATH'
     ],
     "Cloudflare Integration": [
         'CF_API_TOKEN', 'CF_ZONE_ID',
         'CF_CLEAN_IP_DOMAIN'
     ],
-    "System & Other Settings": [
-        'CUSTOM_DNS', 'SSL_PROVIDER', 'DEBUG'
+    "Advanced Settings": [
+        'NGINX_FAKE_WEBSITE',
+        'NGINX_PATH',
+        'CUSTOM_DNS', 
+        'SSL_PROVIDER', 
+        'DEBUG'
     ]
 }
 
