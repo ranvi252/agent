@@ -210,4 +210,40 @@ document.addEventListener('DOMContentLoaded', function() {
     validateInbounds(); // Check if at least one inbound is selected
     validateSpecificFields(); // Check format for domain/IP fields
 
-}); 
+    // --- Handle Advanced Settings Collapse ---
+    const advancedCollapseElement = document.getElementById('collapse-advanced-settings');
+    const headerButton = document.querySelector('.btn-header-toggle');
+    const toggleText = headerButton?.querySelector('.toggle-text');
+    const toggleIcon = headerButton?.querySelector('.toggle-icon');
+
+    if (headerButton && advancedCollapseElement) {
+        console.log('Found required elements for collapse handling');
+        
+        // Remove temporary debugging alert
+        headerButton.addEventListener('click', function(e) {
+            // Direct toggle of visibility
+            if (advancedCollapseElement.classList.contains('show')) {
+                // Hide it
+                advancedCollapseElement.classList.remove('show');
+                if (toggleText) toggleText.textContent = 'Show';
+                if (toggleIcon) {
+                    toggleIcon.classList.remove('bi-chevron-up');
+                    toggleIcon.classList.add('bi-chevron-down');
+                }
+            } else {
+                // Show it
+                advancedCollapseElement.classList.add('show');
+                if (toggleText) toggleText.textContent = 'Hide';
+                if (toggleIcon) {
+                    toggleIcon.classList.remove('bi-chevron-down');
+                    toggleIcon.classList.add('bi-chevron-up');
+                }
+            }
+        });
+    } else {
+        console.error('Could not find required elements for collapse handling:', {
+            collapseElement: !!advancedCollapseElement,
+            button: !!headerButton
+        });
+    }
+});
