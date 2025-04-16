@@ -18,7 +18,6 @@ def update_metrics(configs):
     global latest_metrics
 
     instance_ip = instance_location_info['ip']
-    instance_region = instance_location_info['region']
     instance_country = instance_location_info['country']
 
     metrics = []
@@ -31,7 +30,6 @@ def update_metrics(configs):
             f'machine_id="{get_machine_id()}"',
             f'ip="{instance_ip}"',
             f'country="{instance_country}"',
-            f'region="{instance_region}"',
             f'config_protocol="{config_info["protocol"]}"',
             f'config_host="{config_info["host"]}"',
             f'config_port="{config_info["port"]}"',
