@@ -42,44 +42,56 @@ def get_machine_id():
 
 
 def get_public_ip(extra=False):
+    # Try ip-api.com first
     try:
-        ipinfo_token = os.environ.get('IPINFO_API_TOKEN')
-        qp = ""
-        if ipinfo_token:
-            qp = f"token={ipinfo_token}"
-        # Using a free public IP address API
-        response = requests.get(f'https://ipinfo.io/json?{qp}')
-        print("ipinfo/json: " + response.text)
-        data = response.json()
-        public_ip = data['ip']
+        r = requests.get("http://ip-api.com/json", timeout=5)
+        data = r.json()
+        public_ip = data['query']
         if extra:
-            region = data.get('region', 'Unknown')
             country = data.get('country', 'Unknown')
             return {
                 "ip": public_ip,
-                "region": region,
                 "country": country
             }
         else:
             return public_ip
-    except requests.RequestException as e:
-        print("Error: Unable to retrieve public IP address:", e, flush=True)
-        print("Trying ip-api.com", flush=True)
-        # fallback to ip-api.com
-        r = requests.get("http://ip-api.com/json")
-        data = r.json()
-        print(f"ip-api.com/json: {data}")
-        public_ip = data['query']
-        if extra:
-            region = data.get('regionName', 'Unknown')
-            country = data.get('countryCode', 'Unknown')
-            return {
-                "ip": public_ip,
-                "region": region,
-                "country": country
-            }
-        else:
-            return public_ip
+    except Exception:
+        # Try reallyfreegeoip.org second
+        try:
+            r = requests.get("https://reallyfreegeoip.org/json/", timeout=5)
+            data = r.json()
+            public_ip = data['ip']
+            if extra:
+                country = data.get('country_name', 'Unknown')
+                return {
+                    "ip": public_ip,
+                    "country": country
+                }
+            else:
+                return public_ip
+        except Exception:
+            # Try ipinfo.io last
+            try:
+                response = requests.get('https://ipinfo.io/json', timeout=5)
+                data = response.json()
+                public_ip = data['ip']
+                if extra:
+                    country = data.get('country', 'Unknown')
+                    return {
+                        "ip": public_ip,
+                        "country": country
+                    }
+                else:
+                    return public_ip
+            except Exception:
+                # Last resort fallback
+                if extra:
+                    return {
+                        "ip": "unknown",
+                        "country": "Unknown"
+                    }
+                else:
+                    return "unknown"
 
 
 def get_identifier():
